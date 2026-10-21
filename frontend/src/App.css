@@ -1,0 +1,524 @@
+/* ==========================================================================
+   1. VARIABLES GLOBALES Y CONFIGURACIÓN BASE (Tema Dark Premium)
+   ========================================================================== */
+:root {
+  --bg-main: #121214;
+  /* Fondo profundo de la aplicación */
+  --bg-card: #1a1a1e;
+  /* Fondo de las tarjetas y contenedores */
+  --bg-input: #26262b;
+  /* Fondo de los campos de texto */
+  --accent-color: #f4d03f;
+  /* Amarillo dorado para elementos principales */
+  --accent-hover: #d4b235;
+  /* Dorado oscuro para transiciones */
+  --text-main: #ffffff;
+  /* Texto principal */
+  --text-muted: #a0a0b0;
+  /* Texto secundario / leyendas */
+  --border-color: #2d2d35;
+  /* Bordes sutiles */
+
+  /* Colores de estado basados en el negocio */
+  --color-success: #2ecc71;
+  /* Finalizado */
+  --color-info: #3498db;
+  /* En Progreso */
+  --color-warning: #f39c12;
+  /* Pendiente */
+  --color-danger: #e74c3c;
+  /* Cancelado */
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-main);
+  border-left: 4px solid var(--accent-color);
+  padding-left: 12px;
+  margin-bottom: 25px;
+  letter-spacing: -0.3px;
+}
+
+/* ==========================================================================
+   2. ESTRUCTURA SPA: SIDEBAR + ÁREA DE CONTENIDO (Navegación Profesional)
+   ========================================================================== */
+.layout-main {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-main);
+}
+
+/* Barra lateral fija */
+.sidebar {
+  width: 260px;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  padding: 30px 20px;
+  box-sizing: border-box;
+  position: fixed;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  z-index: 10;
+}
+
+.sidebar-logo {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.sidebar-logo h2 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--accent-color);
+  margin: 0;
+  border: none;
+  padding: 0;
+  letter-spacing: 1px;
+}
+
+.sidebar-logo p {
+  margin: 2px 0 0 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.sidebar-user {
+  background: var(--bg-main);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  border: 1px solid var(--border-color);
+}
+
+.sidebar-user .user-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sidebar-user .user-rol {
+  font-size: 11px;
+  color: var(--accent-color);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Menú de botones */
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-grow: 1;
+}
+
+.sidebar-menu button {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  width: 100%;
+  border-radius: 8px;
+}
+
+.sidebar-menu button:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-main);
+}
+
+/* Estado activo del botón del menú */
+.sidebar-menu button.active {
+  background: var(--bg-input);
+  color: var(--accent-color);
+  border-left: 4px solid var(--accent-color);
+  border-radius: 0 8px 8px 0;
+  padding-left: 12px;
+}
+
+.btn-sidebar-logout {
+  background: transparent;
+  border: 1px solid var(--color-danger) !important;
+  color: var(--color-danger);
+  margin-top: auto;
+  font-weight: 600;
+  width: 100%;
+  cursor: pointer;
+}
+
+.btn-sidebar-logout:hover {
+  background: var(--color-danger) !important;
+  color: #fff !important;
+}
+
+/* Área donde cambian los formularios y listas */
+.content-area {
+  flex-grow: 1;
+  padding: 40px;
+  margin-left: 260px;
+  box-sizing: border-box;
+}
+
+/* Distribución interna del módulo activo */
+.view-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+.columna-view {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* ==========================================================================
+   3. COMPONENTES CARD: FORMULARIOS Y TABLAS
+   ========================================================================== */
+.card-form,
+.card-list {
+  background: var(--bg-card);
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-form h3,
+.card-list h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+input,
+select,
+form button {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(244, 208, 63, 0.15);
+}
+
+form button {
+  background: var(--accent-color);
+  color: #121214;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+form button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+form button:disabled {
+  background: #33333a;
+  color: #777;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   4. ELEMENTOS DE LISTA Y BADGES DE ESTADO
+   ========================================================================== */
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+li strong {
+  color: var(--text-main);
+}
+
+.error {
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--color-danger);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border-left: 4px solid var(--color-danger);
+  margin-bottom: 15px;
+}
+
+.grid-tatuajes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tatuaje-item {
+  background: var(--bg-input);
+  padding: 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.tatuaje-item h4 {
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+  color: var(--accent-color);
+}
+
+.tatuaje-item p {
+  margin: 6px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.PENDIENTE {
+  background: rgba(243, 156, 18, 0.15);
+  color: var(--color-warning);
+}
+
+.EN_PROGRESO {
+  background: rgba(52, 152, 218, 0.15);
+  color: var(--color-info);
+}
+
+.FINALIZADO {
+  background: rgba(46, 204, 113, 0.15);
+  color: var(--color-success);
+}
+
+.CANCELADO {
+  background: rgba(231, 76, 60, 0.15);
+  color: var(--color-danger);
+}
+
+/* ==========================================================================
+   5. SEGURIDAD: PANTALLA LOGIN CENTRADA
+   ========================================================================== */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--bg-main);
+  padding: 20px;
+}
+
+.login-card {
+  background: var(--bg-card);
+  padding: 40px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+  color: var(--accent-color);
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Animación de entrada */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   6. RESPONSIVIDAD (Celulares y Tablets)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .layout-main {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 20px;
+  }
+
+  .sidebar-menu {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sidebar-menu button {
+    padding: 10px 12px;
+    font-size: 13px;
+    width: auto;
+  }
+
+  .sidebar-menu button.active {
+    border-left: none;
+    border-bottom: 3px solid var(--accent-color);
+    border-radius: 8px 8px 0 0;
+  }
+
+  .content-area {
+    margin-left: 0;
+    padding: 20px;
+  }
+
+  .view-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   7. IMPRESIÓN (Ocultar Interfaz al generar Factura PDF)
+   ========================================================================== */
+.print-only {
+  display: none;
+}
+
+@media print {
+
+  body,
+  .layout-main,
+  .app-container,
+  .no-print,
+  aside,
+  header,
+  h1,
+  h2,
+  .columna,
+  form,
+  .card-list,
+  .content-area {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .ticket-factura {
+    width: 75mm;
+    margin: 0 auto;
+    padding: 10px;
+    font-family: 'Courier New', Courier, monospace;
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  .ticket-header {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .ticket-header h2 {
+    font-size: 16px;
+    margin: 0;
+    color: #000 !important;
+  }
+
+  .ticket-header p {
+    margin: 2px 0;
+    font-size: 11px;
+    color: #000 !important;
+  }
+
+  .ticket-body p {
+    margin: 5px 0;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    color: #000 !important;
+  }
+
+  .ticket-totales h3 {
+    font-size: 14px;
+    border-top: 1px dashed #000;
+    padding-top: 6px;
+    display: flex;
+    justify-content: space-between;
+    color: #000 !important;
+  }
+
+  .ticket-footer {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 10px;
+    color: #000 !important;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px dashed #000;
+  }
+}

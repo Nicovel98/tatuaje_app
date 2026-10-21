@@ -1,0 +1,8 @@
+# Dependencias de Node
+node_modules/
+dist/
+.env
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
