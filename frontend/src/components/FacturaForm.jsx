@@ -45,13 +45,13 @@ export default function FacturaForm({ tatuajes, onFacturaGenerada }) {
         num_factura: parseInt(numFactura),
         fecha_emision: new Date().toISOString().split('T')[0],
         total: totalFinal,
-        TATUAJE_id_tatuaje: parseInt(tatuajeId)
+        TATUAJE_id_tatuaje: parseInt(tatuajeId),
+        // 👈 CAMBIO CRUCIAL EN 3FN: Enviamos las sesiones para que el backend llene DETALLE_FACTURA
+        sesiones_facturar: resumen.sesiones_detalladas 
       };
 
-      // 1. Guardar en phpMyAdmin
       await axios.post('http://localhost:5000/api/facturas', datosFactura);
       
-      // 2. Guardar en el estado local para poder generar la vista de impresión
       const tatuajeSeleccionado = tatuajes.find(t => t.id_tatuaje === parseInt(tatuajeId));
       setFacturaEmitida({
         ...datosFactura,
@@ -62,7 +62,7 @@ export default function FacturaForm({ tatuajes, onFacturaGenerada }) {
         total_sesiones: resumen.total_sesiones
       });
 
-      setExito(`Factura #${numFactura} generada con éxito.`);
+      setExito(`Factura #${numFactura} y desglose de servicios emitidos con éxito.`);
       setError('');
       setResumen(null);
       setNumFactura('');

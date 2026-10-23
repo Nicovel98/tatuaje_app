@@ -251,46 +251,75 @@ app.post('/api/tatuajes', (req, res) => {
     });
 });
 
-// ==========================================
-//        ENDPOINTS DE FACTURACIÓN (HU-05, HU-06)
-// ==========================================
+// ==========================================================================
+//        NUEVOS ENDPOINTS DE FACTURACIÓN EN 3FN (COMPATIBLES CON DETALLES)
+// ==========================================================================
 
-// 1. Obtener la información consolidada para facturar un tatuaje (HU-06)
-// Suma las sesiones vinculadas al tatuaje para dar el valor antes de procesar la factura
+// 1. Obtener las sesiones pendientes de facturar para un tatuaje
 app.get('/api/facturacion/resumen/:tatuaje_id', (req, res) => {
     const tatuajeId = req.params.tatuaje_id;
 
-    // Consulta para sumar la duración de horas y valores de todas las sesiones de un tatuaje
-    const querySesiones = `
-        SELECT COUNT(*) AS total_sesiones, SUM(valor) AS subtotal_sesiones 
-        FROM SESION 
-        WHERE TATUAJE_id_tatuaje = ?
+    // Buscamos todas las sesiones de este tatuaje que NO han sido facturadas aún
+    const query = `
+        SELECT s.id_sesion, s.fecha, s.duracion_horas, s.valor, t.tipo_trabajo
+        FROM SESION s
+        JOIN TARIFA t ON s.TARIFA_id_tarifa = t.id_tarifa
+        WHERE s.TATUAJE_id_tatuaje = ? 
+        AND s.id_sesion NOT IN (SELECT id_sesion FROM DETALLE_FACTURA)
     `;
 
-    db.query(querySesiones, [tatuajeId], (err, resultados) => {
+    db.query(query, [tatuajeId], (err, sesiones) => {
         if (err) return res.status(500).json({ error: err.message });
         
-        const datos = resultados[0];
-        if (datos.total_sesiones === 0) {
-            return res.status(440).json({ error: 'El tatuaje no tiene ninguna sesión registrada para facturar.' });
+        if (sesiones.length === 0) {
+            return res.status(404).json({ error: 'Este tatuaje no tiene nuevas sesiones de trabajo pendientes por facturar.' });
         }
 
+        // Calculamos el acumulado de forma dinámica
+        const total_calculado = sesiones.reduce((sum, s) => sum + parseFloat(s.valor), 0);
+        
         return res.json({
             tatuaje_id: tatuajeId,
-            total_sesiones: datos.total_sesiones,
-            total_calculado: datos.subtotal_sesiones || 0
+            total_sesiones: sesiones.length,
+            total_calculado: total_calculado,
+            sesiones_detalladas: sesiones // Enviamos el desglose para el Detalle
         });
     });
 });
 
-// 2. Guardar la factura definitiva en la base de datos
+// 2. Emitir Factura con su Detalle de forma Transaccional (HU-06)
 app.post('/api/facturas', (req, res) => {
-    const { num_factura, fecha_emision, total, TATUAJE_id_tatuaje } = req.body;
+    const { num_factura, fecha_emision, total, TATUAJE_id_tatuaje, sesiones_facturar } = req.body;
 
-    const query = "INSERT INTO FACTURA (num_factura, fecha_emision, total, TATUAJE_id_tatuaje) VALUES (?, ?, ?, ?)";
-    db.query(query, [num_factura, fecha_emision, total, TATUAJE_id_tatuaje], (err, resultado) => {
-        if (err) return res.status(500).json({ error: err.message });
-        return res.json({ mensaje: 'Factura generada exitosamente en el sistema.', num_factura });
+    // Insertamos primero el encabezado de la Factura
+    const queryFactura = "INSERT INTO FACTURA (num_factura, fecha_emision, total, TATUAJE_id_tatuaje) VALUES (?, ?, ?, ?)";
+    
+    db.query(queryFactura, [num_factura, fecha_emision, total, TATUAJE_id_tatuaje], (err, resultado) => {
+        if (err) return res.status(500).json({ error: 'Error al crear el encabezado de la factura: ' + err.message });
+
+        // Insertamos en bucle cada sesión en la tabla DETALLE_FACTURA
+        const queryDetalle = "INSERT INTO DETALLE_FACTURA (num_factura, id_sesion, horas_facturadas, valor_unitario, subtotal) VALUES (?, ?, ?, ?, ?)";
+        
+        // Usamos promesas mapeadas para asegurar que todos los detalles se guarden
+        const promesasDetalles = sesiones_facturar.map(sesion => {
+            return new Promise((resolve, reject) => {
+                // El valor unitario simulado es el valor total de la sesión dividido sus horas
+                const valorUnitario = parseFloat(sesion.valor) / parseFloat(sesion.duracion_horas);
+                db.query(
+                    queryDetalle, 
+                    [num_factura, sesion.id_sesion, sesion.duracion_horas, valorUnitario, sesion.valor], 
+                    (errD) => errD ? reject(errD) : resolve()
+                );
+            });
+        });
+
+        Promise.all(promesasDetalles)
+            .then(() => {
+                return res.json({ mensaje: 'Factura y desglose de detalles guardados con éxito en 3FN.', num_factura });
+            })
+            .catch(errorDetalle => {
+                return res.status(500).json({ error: 'Factura creada pero hubo un error en el desglose: ' + errorDetalle.message });
+            });
     });
 });
 
