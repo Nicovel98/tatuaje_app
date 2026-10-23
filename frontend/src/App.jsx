@@ -1,27 +1,28 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import LoginForm from './components/LoginForm';
-import UsuarioForm from './components/UsuarioForm';
-import ClienteForm from './components/ClienteForm';
-import ClienteList from './components/ClienteList';
-import TatuajeForm from './components/TatuajeForm';
-import TatuajeList from './components/TatuajeList';
-import TarifaForm from './components/TarifaForm'; 
-import TarifaList from './components/TarifaList'; 
-import SesionForm from './components/SesionForm'; 
-import FacturaForm from './components/FacturaForm'; 
-import './App.css';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import LoginForm from "./components/LoginForm";
+import UsuarioForm from "./components/UsuarioForm";
+import ClienteForm from "./components/ClienteForm";
+import ClienteList from "./components/ClienteList";
+import TatuajeForm from "./components/TatuajeForm";
+import TatuajeList from "./components/TatuajeList";
+import TarifaForm from "./components/TarifaForm";
+import TarifaList from "./components/TarifaList";
+import SesionForm from "./components/SesionForm";
+import FacturaForm from "./components/FacturaForm";
+import ReportesView from "./components/ReportesView"; // ✅ Componente contable importado
+import "./App.css";
 
 function App() {
-  const [usuario, setUsuario] = useState(null); 
-  const [vistaActiva, setVistaActiva] = useState('clientes'); // Controla el menú: clientes, tatuajes, tarifas, facturacion, usuarios
+  const [usuario, setUsuario] = useState(null);
+  const [vistaActiva, setVistaActiva] = useState("clientes");
   const [clientes, setClientes] = useState([]);
   const [tatuajes, setTatuajes] = useState([]);
-  const [tarifas, setTarifas] = useState([]); 
+  const [tarifas, setTarifas] = useState([]);
 
   const cargarClientes = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/clientes');
+      const res = await axios.get("http://localhost:5000/api/clientes");
       setClientes(res.data);
     } catch (err) {
       console.error("Error cargando clientes", err);
@@ -30,7 +31,7 @@ function App() {
 
   const cargarTatuajes = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/tatuajes');
+      const res = await axios.get("http://localhost:5000/api/tatuajes");
       setTatuajes(res.data);
     } catch (err) {
       console.error("Error cargando tatuajes", err);
@@ -39,7 +40,7 @@ function App() {
 
   const cargarTarifas = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/tarifas');
+      const res = await axios.get("http://localhost:5000/api/tarifas");
       setTarifas(res.data);
     } catch (err) {
       console.error("Error cargando tarifas", err);
@@ -61,9 +62,9 @@ function App() {
     const cargarDatosDashboard = async () => {
       try {
         const [resClientes, resTatuajes, resTarifas] = await Promise.all([
-          axios.get('http://localhost:5000/api/clientes'),
-          axios.get('http://localhost:5000/api/tatuajes'),
-          axios.get('http://localhost:5000/api/tarifas')
+          axios.get("http://localhost:5000/api/clientes"),
+          axios.get("http://localhost:5000/api/tatuajes"),
+          axios.get("http://localhost:5000/api/tarifas"),
         ]);
 
         if (estaActivo) {
@@ -81,12 +82,14 @@ function App() {
     return () => {
       estaActivo = false;
     };
-  }, [usuario]); 
+  }, [usuario]);
 
   if (!usuario) {
     return (
       <div className="login-container">
-        <LoginForm onLoginExitoso={(usuarioLogueado) => setUsuario(usuarioLogueado)} />
+        <LoginForm
+          onLoginExitoso={(usuarioLogueado) => setUsuario(usuarioLogueado)}
+        />
       </div>
     );
   }
@@ -96,36 +99,59 @@ function App() {
       {/* 📌 BARRA LATERAL DE NAVEGACIÓN PROFESIONAL */}
       <aside className="sidebar no-print">
         <div className="sidebar-logo">
-          <h2>ART INK</h2>
+          <h2>🎨 ART INK</h2>
           <p>Tattoo Studio</p>
         </div>
-        
+
         <div className="sidebar-user">
           <p className="user-name">👤 {usuario.nombre}</p>
           <span className="user-rol">{usuario.rol}</span>
         </div>
 
         <nav className="sidebar-menu">
-          <button className={vistaActiva === 'clientes' ? 'active' : ''} onClick={() => setVistaActiva('clientes')}>
+          <button
+            className={vistaActiva === "clientes" ? "active" : ""}
+            onClick={() => setVistaActiva("clientes")}
+          >
             👥 Gestión Clientes
           </button>
-          
-          <button className={vistaActiva === 'tatuajes' ? 'active' : ''} onClick={() => setVistaActiva('tatuajes')}>
+
+          <button
+            className={vistaActiva === "tatuajes" ? "active" : ""}
+            onClick={() => setVistaActiva("tatuajes")}
+          >
             🎨 Diseños & Tatuajes
           </button>
-          
-          <button className={vistaActiva === 'tarifas' ? 'active' : ''} onClick={() => setVistaActiva('tarifas')}>
+
+          <button
+            className={vistaActiva === "tarifas" ? "active" : ""}
+            onClick={() => setVistaActiva("tarifas")}
+          >
             💰 Catálogo Tarifas
           </button>
 
-          <button className={vistaActiva === 'facturacion' ? 'active' : ''} onClick={() => setVistaActiva('facturacion')}>
+          <button
+            className={vistaActiva === "facturacion" ? "active" : ""}
+            onClick={() => setVistaActiva("facturacion")}
+          >
             🖨️ Facturación Caja
           </button>
 
-          {usuario.rol === 'ADMINISTRADOR' && (
-            <button className={vistaActiva === 'usuarios' ? 'active' : ''} onClick={() => setVistaActiva('usuarios')}>
-              ⚙️ Control Personal
-            </button>
+          {usuario.rol === "ADMINISTRADOR" && (
+            <>
+              <button
+                className={vistaActiva === "usuarios" ? "active" : ""}
+                onClick={() => setVistaActiva("usuarios")}
+              >
+                ⚙️ Control Personal
+              </button>
+              <button
+                className={vistaActiva === "reportes" ? "active" : ""}
+                onClick={() => setVistaActiva("reportes")}
+              >
+                📊 Cierre & Reportes
+              </button>
+            </>
           )}
         </nav>
 
@@ -136,7 +162,7 @@ function App() {
 
       {/* 📌 CONTENIDO CENTRAL DINÁMICO */}
       <main className="content-area">
-        {vistaActiva === 'clientes' && (
+        {vistaActiva === "clientes" && (
           <div className="fade-in animate-view">
             <h2>Módulo de Clientes (HU-01)</h2>
             <div className="view-grid">
@@ -146,20 +172,28 @@ function App() {
           </div>
         )}
 
-        {vistaActiva === 'tatuajes' && (
+        {vistaActiva === "tatuajes" && (
           <div className="fade-in animate-view">
             <h2>Módulo de Diseños y Tatuajes</h2>
             <div className="view-grid">
               <div className="columna-view">
-                <TatuajeForm clientes={clientes} onTatuajeCreado={cargarTatuajes} />
-                <SesionForm tatuajes={tatuajes} tarifas={tarifas} usuarioActivo={usuario} onSesionCreada={() => console.log("Sesión añadida")} />
+                <TatuajeForm
+                  clientes={clientes}
+                  onTatuajeCreado={cargarTatuajes}
+                />
+                <SesionForm
+                  tatuajes={tatuajes}
+                  tarifas={tarifas}
+                  usuarioActivo={usuario}
+                  onSesionCreada={() => console.log("Sesión añadida")}
+                />
               </div>
               <TatuajeList tatuajes={tatuajes} />
             </div>
           </div>
         )}
 
-        {vistaActiva === 'tarifas' && (
+        {vistaActiva === "tarifas" && (
           <div className="fade-in animate-view">
             <h2>Configuración de Tarifas (HU-04)</h2>
             <div className="view-grid">
@@ -169,22 +203,30 @@ function App() {
           </div>
         )}
 
-        {vistaActiva === 'facturacion' && (
+        {vistaActiva === "facturacion" && (
           <div className="fade-in animate-view">
             <h2>Caja y Emisión de Facturas (HU-05, HU-06)</h2>
-            <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-              <FacturaForm tatuajes={tatuajes} onFacturaGenerada={() => console.log("Factura emitida")} />
+            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+              <FacturaForm
+                tatuajes={tatuajes}
+                onFacturaGenerada={() => console.log("Factura emitida")}
+              />
             </div>
           </div>
         )}
 
-        {vistaActiva === 'usuarios' && usuario.rol === 'ADMINISTRADOR' && (
+        {vistaActiva === "usuarios" && usuario.rol === "ADMINISTRADOR" && (
           <div className="fade-in animate-view">
             <h2>Gestión de Personal y Tatuadores (HU-11)</h2>
-            <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
               <UsuarioForm />
             </div>
           </div>
+        )}
+
+        {/* ✅ Renderizador de reportes contables */}
+        {vistaActiva === "reportes" && usuario.rol === "ADMINISTRADOR" && (
+          <ReportesView />
         )}
       </main>
     </div>
