@@ -6,29 +6,50 @@ export default function ClienteForm({ onClienteCreado }) {
     id_cliente: "",
     nombre: "",
     telefono: "",
+    correo: "",
   });
   const [error, setError] = useState("");
+  const [exito, setExito] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.id_cliente || !formData.nombre || !formData.telefono) {
-      setError("Todos los campos son obligatorios");
+
+    // Criterio de Aceptación Escenario 2: Validar campos obligatorios
+    if (
+      !formData.id_cliente ||
+      !formData.nombre ||
+      !formData.telefono ||
+      !formData.correo
+    ) {
+      setError("Todos los campos son obligatorios.");
       return;
     }
+
     try {
       await axios.post("http://localhost:5000/api/clientes", formData);
-      onClienteCreado(); // Recargar la lista de clientes
-      setFormData({ id_cliente: "", nombre: "", telefono: "" }); // Limpiar formulario
+      setExito("¡Cliente registrado con éxito! (HU-01)");
       setError("");
+      setFormData({ id_cliente: "", nombre: "", telefono: "", correo: "" }); // Limpiar formulario
+      if (onClienteCreado) onClienteCreado(); // Recargar el listado
     } catch (err) {
-      setError(err.response?.data?.error || "Error al registrar cliente");
+      setExito("");
+      setError(
+        err.response?.data?.error ||
+          "Error al registrar el cliente en el sistema.",
+      );
     }
   };
 
   return (
     <div className="card-form">
-      <h3>Registrar Cliente</h3>
+      <h3>Registrar Cliente (HU-01)</h3>
       {error && <p className="error">{error}</p>}
+      {exito && (
+        <p className="exito" style={{ color: "#2ecc71", fontWeight: "bold" }}>
+          {exito}
+        </p>
+      )}
+
       <form onSubmit={handleSubmit}>
         <input
           type="number"
@@ -46,11 +67,18 @@ export default function ClienteForm({ onClienteCreado }) {
         />
         <input
           type="text"
-          placeholder="Teléfono"
+          placeholder="Teléfono de Contacto"
           value={formData.telefono}
           onChange={(e) =>
             setFormData({ ...formData, telefono: e.target.value })
           }
+        />
+        {/* 👈 NUEVO: Campo de correo electrónico requerido por la 3FN */}
+        <input
+          type="email"
+          placeholder="Correo Electrónico"
+          value={formData.correo}
+          onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
         />
         <button type="submit">Guardar Cliente</button>
       </form>

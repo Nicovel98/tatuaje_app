@@ -240,15 +240,18 @@ app.get("/api/clientes", (req, res) => {
 });
 
 // 2. Registrar un nuevo cliente
+// Registrar un nuevo cliente (HU-01 con soporte para Correo)
 app.post("/api/clientes", (req, res) => {
-  const { id_cliente, nombre, telefono } = req.body;
-  const query =
-    "INSERT INTO CLIENTE (id_cliente, nombre, telefono) VALUES (?, ?, ?)";
+  const { id_cliente, nombre, telefono, correo } = req.body;
 
-  db.query(query, [id_cliente, nombre, telefono], (err, resultado) => {
+  // Inserción incluyendo el nuevo campo
+  const query =
+    "INSERT INTO CLIENTE (id_cliente, nombre, telefono, correo) VALUES (?, ?, ?, ?)";
+
+  db.query(query, [id_cliente, nombre, telefono, correo], (err, resultado) => {
     if (err) return res.status(500).json({ error: err.message });
     return res.json({
-      mensaje: "Cliente registrado con éxito",
+      mensaje: "Cliente registrado con éxito en el sistema.",
       id: id_cliente,
     });
   });
