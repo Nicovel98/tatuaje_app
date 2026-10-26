@@ -187,7 +187,7 @@ h2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 30px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .columna-view {
@@ -332,7 +332,7 @@ li strong {
   color: var(--color-warning);
 }
 
-.EN_PROGRESO {
+.PROGRAMADO {
   background: rgba(52, 152, 218, 0.15);
   color: var(--color-info);
 }
@@ -448,18 +448,28 @@ li strong {
 
 @media print {
 
-  body,
-  .layout-main,
-  .app-container,
-  .no-print,
   aside,
   header,
-  h1,
-  h2,
-  .columna,
-  form,
-  .card-list,
-  .content-area {
+  .sidebar,
+  .btn-sidebar-logout {
+    display: none !important;
+  }
+
+  body,
+  .layout-main,
+  .content-area,
+  .card-form {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .no-print,
+  h2, .view-grid, .card-list, .error, .exito {
     display: none !important;
   }
 
@@ -520,5 +530,180 @@ li strong {
   hr {
     border: none;
     border-top: 1px dashed #000;
+  }
+
+  /* FACTURA ELECTRONICA COLOMBIANA - FORMATO IMPRESION */
+  .factura-electronica {
+    display: block !important;
+    width: 210mm;
+    margin: 0 auto;
+    padding: 20px 30px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #000 !important;
+    background: #fff !important;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .fe-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 3px solid #1a1a2e;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+  }
+
+  .fe-empresa h2 {
+    font-size: 18px;
+    margin: 0 0 5px 0;
+    color: #1a1a2e !important;
+    display: block !important;
+    border: none;
+    padding: 0;
+  }
+
+  .fe-empresa p {
+    margin: 2px 0;
+    font-size: 10px;
+    color: #333 !important;
+  }
+
+  .fe-numero {
+    text-align: right;
+  }
+
+  .fe-numero h3 {
+    font-size: 13px;
+    margin: 0 0 5px 0;
+    color: #1a1a2e !important;
+    text-transform: uppercase;
+  }
+
+  .fe-num-grande {
+    font-size: 20px !important;
+    font-weight: 900;
+    color: #c0392b !important;
+    margin: 5px 0 !important;
+  }
+
+  .fe-numero p {
+    margin: 2px 0;
+    font-size: 10px;
+    color: #333 !important;
+  }
+
+  .fe-partes {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+  }
+
+  .fe-parte {
+    flex: 1;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 4px;
+  }
+
+  .fe-parte h4 {
+    font-size: 10px;
+    text-transform: uppercase;
+    margin: 0 0 6px 0;
+    color: #1a1a2e !important;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+  }
+
+  .fe-parte p {
+    margin: 3px 0;
+    font-size: 10px;
+    color: #333 !important;
+  }
+
+  .fe-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 10px;
+  }
+
+  .fe-tabla th {
+    background: #1a1a2e;
+    color: #fff !important;
+    padding: 8px 6px;
+    text-align: left;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .fe-tabla td {
+    padding: 7px 6px;
+    border-bottom: 1px solid #eee;
+    color: #333 !important;
+  }
+
+  .fe-tabla tr:nth-child(even) td {
+    background: #f9f9f9;
+  }
+
+  .fe-totales {
+    margin: 15px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .fe-total-fila {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 12px;
+    font-size: 11px;
+    color: #333 !important;
+    border-bottom: 1px solid #eee;
+  }
+
+  .fe-total-final {
+    background: #1a1a2e;
+    color: #fff !important;
+    font-size: 14px;
+    font-weight: 900;
+    padding: 10px 12px;
+    border-bottom: none;
+  }
+
+  .fe-total-final span {
+    color: #fff !important;
+  }
+
+  .fe-cufe {
+    margin: 15px 0;
+    padding: 10px;
+    background: #f5f5f5;
+    border: 1px dashed #999;
+    border-radius: 4px;
+    word-break: break-all;
+    font-size: 9px;
+    color: #555 !important;
+  }
+
+  .fe-cufe p {
+    margin: 0;
+    color: #555 !important;
+  }
+
+  .fe-footer {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 2px solid #1a1a2e;
+    font-size: 9px;
+    color: #666 !important;
+  }
+
+  .fe-footer p {
+    margin: 2px 0;
+    color: #666 !important;
   }
 }

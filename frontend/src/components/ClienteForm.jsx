@@ -14,7 +14,6 @@ export default function ClienteForm({ onClienteCreado }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Criterio de Aceptación Escenario 2: Validar campos obligatorios
     if (
       !formData.id_cliente ||
       !formData.nombre ||
@@ -27,10 +26,11 @@ export default function ClienteForm({ onClienteCreado }) {
 
     try {
       await axios.post("http://localhost:5000/api/clientes", formData);
-      setExito("¡Cliente registrado con éxito! (HU-01)");
+      setExito("Cliente registrado con exito!");
       setError("");
-      setFormData({ id_cliente: "", nombre: "", telefono: "", correo: "" }); // Limpiar formulario
-      if (onClienteCreado) onClienteCreado(); // Recargar el listado
+      setFormData({ id_cliente: "", nombre: "", telefono: "", correo: "" });
+      cargarSiguienteId();
+      if (onClienteCreado) onClienteCreado();
     } catch (err) {
       setExito("");
       setError(
@@ -42,7 +42,7 @@ export default function ClienteForm({ onClienteCreado }) {
 
   return (
     <div className="card-form">
-      <h3>Registrar Cliente (HU-01)</h3>
+      <h3>Registrar Cliente</h3>
       {error && <p className="error">{error}</p>}
       {exito && (
         <p className="exito" style={{ color: "#2ecc71", fontWeight: "bold" }}>
@@ -53,7 +53,7 @@ export default function ClienteForm({ onClienteCreado }) {
       <form onSubmit={handleSubmit}>
         <input
           type="number"
-          placeholder="Cédula / ID Cliente"
+          placeholder="Cedula / ID Cliente"
           value={formData.id_cliente}
           onChange={(e) =>
             setFormData({ ...formData, id_cliente: e.target.value })
@@ -67,16 +67,15 @@ export default function ClienteForm({ onClienteCreado }) {
         />
         <input
           type="text"
-          placeholder="Teléfono de Contacto"
+          placeholder="Telefono de Contacto"
           value={formData.telefono}
           onChange={(e) =>
             setFormData({ ...formData, telefono: e.target.value })
           }
         />
-        {/* 👈 NUEVO: Campo de correo electrónico requerido por la 3FN */}
         <input
           type="email"
-          placeholder="Correo Electrónico"
+          placeholder="Correo Electronico"
           value={formData.correo}
           onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
         />

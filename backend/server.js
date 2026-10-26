@@ -104,7 +104,7 @@ app.post("/api/usuarios", (req, res) => {
 // Obtener la lista de usuarios/tatuadores activos
 app.get("/api/usuarios", (req, res) => {
   const query =
-    "SELECT id_usuario, nombre, correo, rol, activo FROM USUARIO WHERE activo = 'S'";
+    "SELECT id_usuario, nombre, correo, rol, estado FROM USUARIO WHERE estado = 'ACTIVO'";
   db.query(query, (err, resultados) => {
     if (err) return res.status(500).json({ error: err.message });
     return res.json(resultados);
@@ -126,9 +126,9 @@ app.post("/api/sesiones", (req, res) => {
     TATUAJE_id_tatuaje,
     USUARIO_id_usuario,
     TARIFA_id_tarifa,
+    ultima_sesion,
   } = req.body;
 
-  // Validación de negocio (Regla de calidad: Duración mayor a cero)
   if (parseFloat(duracion_horas) <= 0) {
     return res
       .status(400)
@@ -154,9 +154,33 @@ app.post("/api/sesiones", (req, res) => {
     ],
     (err, resultado) => {
       if (err) return res.status(500).json({ error: err.message });
-      return res.json({
-        mensaje: "Sesión de trabajo registrada con éxito",
-        id: id_sesion,
+
+      const actualizarEstado = (cb) => {
+        if (ultima_sesion && TATUAJE_id_tatuaje) {
+          const hoy = new Date().toISOString().split("T")[0];
+          db.query(
+            "UPDATE TATUAJE SET estado = 'FINALIZADO', fecha_finalizacion = COALESCE(fecha_finalizacion, ?) WHERE id_tatuaje = ?",
+            [hoy, TATUAJE_id_tatuaje],
+            () => cb()
+          );
+        } else if (es_retoque === "N" && TATUAJE_id_tatuaje) {
+          db.query(
+            "UPDATE TATUAJE SET estado = 'PROGRAMADO' WHERE id_tatuaje = ? AND estado = 'PENDIENTE'",
+            [TATUAJE_id_tatuaje],
+            () => cb()
+          );
+        } else {
+          cb();
+        }
+      };
+
+      actualizarEstado(() => {
+        return res.json({
+          mensaje: ultima_sesion
+            ? "Sesión registrada y tatuaje marcado como finalizado."
+            : "Sesión de trabajo registrada con éxito",
+          id: id_sesion,
+        });
       });
     },
   );
@@ -196,13 +220,25 @@ app.get("/api/tarifas", (req, res) => {
 
 // 2. Crear una nueva tarifa base
 app.post("/api/tarifas", (req, res) => {
-  const { id_tarifa, tipo_trabajo, valor_hora } = req.body;
+  const { id_tarifa, tipo_trabajo, valor_hora, tatuador_nombre } = req.body;
   const query =
-    "INSERT INTO TARIFA (id_tarifa, tipo_trabajo, valor_hora) VALUES (?, ?, ?)";
+    "INSERT INTO TARIFA (id_tarifa, tipo_trabajo, valor_hora, tatuador_nombre) VALUES (?, ?, ?, ?)";
 
-  db.query(query, [id_tarifa, tipo_trabajo, valor_hora], (err, resultado) => {
+  db.query(query, [id_tarifa, tipo_trabajo, valor_hora, tatuador_nombre || null], (err, resultado) => {
     if (err) return res.status(500).json({ error: err.message });
     return res.json({ mensaje: "Tarifa configurada con éxito", id: id_tarifa });
+  });
+});
+
+// 3. Editar una tarifa existente
+app.put("/api/tarifas/:id", (req, res) => {
+  const { id } = req.params;
+  const { tipo_trabajo, valor_hora, tatuador_nombre } = req.body;
+  const query = "UPDATE TARIFA SET tipo_trabajo = ?, valor_hora = ?, tatuador_nombre = ? WHERE id_tarifa = ?";
+  db.query(query, [tipo_trabajo, valor_hora, tatuador_nombre || null, id], (err, resultado) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (resultado.affectedRows === 0) return res.status(404).json({ error: "Tarifa no encontrada." });
+    return res.json({ mensaje: "Tarifa actualizada con éxito" });
   });
 });
 
@@ -227,8 +263,114 @@ db.connect((error) => {
 });
 
 // ==========================================
+//          ACTUALIZAR ESTADO DE TATUAJE
+// ==========================================
+
+app.put("/api/tatuajes/:id/estado", (req, res) => {
+  const { id } = req.params;
+  const { estado, fecha_finalizacion } = req.body;
+
+  const estadosValidos = ["PENDIENTE", "PROGRAMADO", "FINALIZADO", "CANCELADO"];
+  if (!estadosValidos.includes(estado)) {
+    return res.status(400).json({ error: "Estado no válido." });
+  }
+
+  let query, params;
+  if (estado === "FINALIZADO") {
+    const fecha = fecha_finalizacion || new Date().toISOString().split("T")[0];
+    query = "UPDATE TATUAJE SET estado = ?, fecha_finalizacion = ? WHERE id_tatuaje = ?";
+    params = [estado, fecha, id];
+  } else {
+    query = "UPDATE TATUAJE SET estado = ?, fecha_finalizacion = NULL WHERE id_tatuaje = ?";
+    params = [estado, id];
+  }
+
+  db.query(query, params, (err, resultado) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({ error: "Tatuaje no encontrado." });
+    }
+    return res.json({ mensaje: `Estado actualizado a ${estado}` });
+  });
+});
+
+// ==========================================
+//          OBTENER DETALLE DE FACTURA
+// ==========================================
+
+app.get("/api/facturas/:num/detalle", (req, res) => {
+  const num = req.params.num;
+
+  const queryFactura = `
+    SELECT f.num_factura, f.fecha_emision, f.total,
+           t.diseno, t.zona_cuerpo, t.valor_estimado, t.anticipo,
+           c.id_cliente, c.nombre AS nombre_cliente, c.telefono, c.correo AS correo_cliente
+    FROM FACTURA f
+    JOIN TATUAJE t ON f.TATUAJE_id_tatuaje = t.id_tatuaje
+    JOIN CLIENTE c ON t.CLIENTE_id_cliente = c.id_cliente
+    WHERE f.num_factura = ?
+  `;
+
+  db.query(queryFactura, [num], (err, facturaRows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (facturaRows.length === 0) return res.status(404).json({ error: "Factura no encontrada." });
+
+    const factura = facturaRows[0];
+
+    const queryDetalle = `
+      SELECT df.horas_facturadas, df.valor_unitario, df.subtotal,
+             s.fecha, s.es_retoque, u.nombre AS nombre_tatuador, u.id_usuario,
+             tar.tipo_trabajo
+      FROM DETALLE_FACTURA df
+      JOIN SESION s ON df.id_sesion = s.id_sesion
+      JOIN USUARIO u ON s.USUARIO_id_usuario = u.id_usuario
+      JOIN TARIFA tar ON s.TARIFA_id_tarifa = tar.id_tarifa
+      WHERE df.num_factura = ?
+    `;
+
+    db.query(queryDetalle, [num], (errD, detalles) => {
+      if (errD) return res.status(500).json({ error: errD.message });
+      return res.json({ ...factura, detalles });
+    });
+  });
+});
+
+// ==========================================
+//          LISTAR TODAS LAS FACTURAS
+// ==========================================
+
+app.get("/api/facturas/siguiente-numero", (req, res) => {
+  db.query("SELECT COALESCE(MAX(num_factura), 0) + 1 AS siguiente FROM FACTURA", (err, resultados) => {
+    if (err) return res.status(500).json({ error: err.message });
+    return res.json({ siguiente: resultados[0].siguiente });
+  });
+});
+
+app.get("/api/facturas", (req, res) => {
+  const query = `
+    SELECT f.num_factura, f.fecha_emision, f.total, t.diseno, c.nombre AS nombre_cliente
+    FROM FACTURA f
+    JOIN TATUAJE t ON f.TATUAJE_id_tatuaje = t.id_tatuaje
+    JOIN CLIENTE c ON t.CLIENTE_id_cliente = c.id_cliente
+    ORDER BY f.num_factura DESC
+  `;
+  db.query(query, (err, resultados) => {
+    if (err) return res.status(500).json({ error: err.message });
+    return res.json(resultados);
+  });
+});
+
+// ==========================================
 //          ENDPOINTS DE CLIENTES
 // ==========================================
+
+// Siguiente ID recomendado para cliente
+app.get("/api/clientes/siguiente-id", (req, res) => {
+  db.query("SELECT COALESCE(MAX(id_cliente), 0) + 1 AS siguiente FROM CLIENTE", (err, r) => {
+    if (err) return res.status(500).json({ error: err.message });
+    return res.json({ siguiente: r[0].siguiente });
+  });
+});
 
 // 1. Obtener todos los clientes
 app.get("/api/clientes", (req, res) => {
@@ -257,16 +399,57 @@ app.post("/api/clientes", (req, res) => {
   });
 });
 
+// 3. Editar un cliente existente
+app.put("/api/clientes/:id", (req, res) => {
+  const { id } = req.params;
+  const { nombre, telefono, correo } = req.body;
+  const query = "UPDATE CLIENTE SET nombre = ?, telefono = ?, correo = ? WHERE id_cliente = ?";
+  db.query(query, [nombre, telefono, correo, id], (err, resultado) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (resultado.affectedRows === 0) return res.status(404).json({ error: "Cliente no encontrado." });
+    return res.json({ mensaje: "Cliente actualizado con éxito" });
+  });
+});
+
 // ==========================================
 //          ENDPOINTS DE TATUAJES
 // ==========================================
 
+// Siguiente ID recomendado para tatuaje
+app.get("/api/tatuajes/siguiente-id", (req, res) => {
+  db.query("SELECT COALESCE(MAX(id_tatuaje), 0) + 1 AS siguiente FROM TATUAJE", (err, r) => {
+    if (err) return res.status(500).json({ error: err.message });
+    return res.json({ siguiente: r[0].siguiente });
+  });
+});
+
+// Siguiente ID recomendado para sesion
+app.get("/api/sesiones/siguiente-id", (req, res) => {
+  db.query("SELECT COALESCE(MAX(id_sesion), 0) + 1 AS siguiente FROM SESION", (err, r) => {
+    if (err) return res.status(500).json({ error: err.message });
+    return res.json({ siguiente: r[0].siguiente });
+  });
+});
+
+// Siguiente ID recomendado para tarifa
+app.get("/api/tarifas/siguiente-id", (req, res) => {
+  db.query("SELECT COALESCE(MAX(id_tarifa), 0) + 1 AS siguiente FROM TARIFA", (err, r) => {
+    if (err) return res.status(500).json({ error: err.message });
+    return res.json({ siguiente: r[0].siguiente });
+  });
+});
+
 // 3. Obtener todos los tatuajes con la información de su cliente (JOIN)
 app.get("/api/tatuajes", (req, res) => {
   const query = `
-        SELECT t.*, c.nombre AS nombre_cliente
+        SELECT t.*, c.nombre AS nombre_cliente,
+          tar.tipo_trabajo, tar.valor_hora, tar.tatuador_nombre,
+          (SELECT GROUP_CONCAT(s.id_sesion ORDER BY s.id_sesion SEPARATOR ', ')
+           FROM SESION s WHERE s.TATUAJE_id_tatuaje = t.id_tatuaje) AS sesiones_ids
         FROM TATUAJE t
         JOIN CLIENTE c ON t.CLIENTE_id_cliente = c.id_cliente
+        LEFT JOIN TARIFA tar ON t.TARIFA_id_tarifa = tar.id_tarifa
+        ORDER BY t.id_tatuaje DESC
     `;
   db.query(query, (err, resultados) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -289,9 +472,9 @@ app.post("/api/tatuajes", (req, res) => {
     anticipo,
     fecha_finalizacion,
     CLIENTE_id_cliente,
+    TARIFA_id_tarifa,
   } = req.body;
 
-  // Regla de negocio obligatoria HU-05: El anticipo no puede superar el valor estimado
   if (parseFloat(anticipo) > parseFloat(valor_estimado)) {
     return res.status(400).json({
       error:
@@ -300,8 +483,8 @@ app.post("/api/tatuajes", (req, res) => {
   }
 
   const query = `
-        INSERT INTO TATUAJE (id_tatuaje, diseno, zona_cuerpo, estado, horas_estimadas, valor_estimado, anticipo, fecha_finalizacion, CLIENTE_id_cliente)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO TATUAJE (id_tatuaje, diseno, zona_cuerpo, estado, horas_estimadas, valor_estimado, anticipo, fecha_finalizacion, CLIENTE_id_cliente, TARIFA_id_tarifa)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
   db.query(
@@ -316,6 +499,7 @@ app.post("/api/tatuajes", (req, res) => {
       anticipo,
       fecha_finalizacion,
       CLIENTE_id_cliente,
+      TARIFA_id_tarifa || null,
     ],
     (err, resultado) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -334,8 +518,8 @@ app.post("/api/tatuajes", (req, res) => {
 // 1. Obtener sesiones pendientes Y jalar el anticipo de la base de datos
 app.get("/api/facturacion/resumen/:tatuaje_id", (req, res) => {
   const tatuajeId = req.params.tatuaje_id;
+  const soloRetoques = req.query.solo_retoques === "1";
 
-  // Consulta 1: Traer el anticipo y diseño del tatuaje
   const queryTatuaje =
     "SELECT diseno, anticipo, valor_estimado FROM TATUAJE WHERE id_tatuaje = ?";
 
@@ -346,13 +530,14 @@ app.get("/api/facturacion/resumen/:tatuaje_id", (req, res) => {
 
     const tatuajeInfo = datosTatuaje[0];
 
-    // Consulta 2: Traer las sesiones que aún no se han metido a ninguna factura
+    const filtroRetoque = soloRetoques ? "AND s.es_retoque = 'S'" : "";
     const querySesiones = `
-            SELECT s.id_sesion, s.fecha, s.duracion_horas, s.valor, t.tipo_trabajo
+            SELECT s.id_sesion, s.fecha, s.duracion_horas, s.valor, s.es_retoque, t.tipo_trabajo
             FROM SESION s
             JOIN TARIFA t ON s.TARIFA_id_tarifa = t.id_tarifa
             WHERE s.TATUAJE_id_tatuaje = ?
             AND s.id_sesion NOT IN (SELECT id_sesion FROM DETALLE_FACTURA)
+            ${filtroRetoque}
         `;
 
     db.query(querySesiones, [tatuajeId], (errS, sesiones) => {
@@ -360,8 +545,9 @@ app.get("/api/facturacion/resumen/:tatuaje_id", (req, res) => {
 
       if (sesiones.length === 0) {
         return res.status(404).json({
-          error:
-            "Este tatuaje no tiene nuevas sesiones de trabajo pendientes por facturar.",
+          error: soloRetoques
+            ? "Este tatuaje no tiene retoques pendientes por facturar."
+            : "Este tatuaje no tiene nuevas sesiones de trabajo pendientes por facturar.",
         });
       }
 
@@ -370,11 +556,10 @@ app.get("/api/facturacion/resumen/:tatuaje_id", (req, res) => {
         0,
       );
 
-      // Retornamos todo consolidado al Frontend
       return res.json({
         tatuaje_id: tatuajeId,
         diseno: tatuajeInfo.diseno,
-        anticipo_guardado: tatuajeInfo.anticipo, // 👈 Jalado de MySQL
+        anticipo_guardado: soloRetoques ? 0 : tatuajeInfo.anticipo,
         total_sesiones: sesiones.length,
         total_calculado: total_calculado,
         sesiones_detalladas: sesiones,
@@ -483,9 +668,15 @@ app.post("/api/facturas", (req, res) => {
 
       Promise.all(promesasDetalles)
         .then(() => {
+          const hoy = new Date().toISOString().split("T")[0];
+          db.query(
+            "UPDATE TATUAJE SET estado = 'FINALIZADO', fecha_finalizacion = COALESCE(fecha_finalizacion, ?) WHERE id_tatuaje = ?",
+            [hoy, TATUAJE_id_tatuaje],
+            () => {}
+          );
           return res.json({
             mensaje:
-              "Factura y desglose de detalles guardados con éxito en 3FN.",
+              "Factura emitida y tatuaje marcado como finalizado.",
             num_factura,
           });
         })
