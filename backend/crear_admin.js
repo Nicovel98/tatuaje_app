@@ -3,57 +3,45 @@ const bcrypt = require("bcrypt");
 
 // Conexión a la base de datos tatuaje
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
+  host: "127.0.0.1",
+  user: "app_user",
+  password: "12345",
   database: "tatuaje",
 });
 
-async function registrarAdminSemilla() {
-  const id_usuario = 1;
-  const nombre = "Admin Estudio";
-  const correo = "admin@estudio.com";
-  const clavePlana = "admin123";
-  const rol = "ADMINISTRADOR";
-  const estado = "ACTIVO";
-
+async function registrarSemillas() {
   try {
-    // 1. Limpiamos cualquier registro roto previo con ID 1 o con ese correo
-    db.query(
-      "DELETE FROM USUARIO WHERE id_usuario = ? OR correo = ?",
-      [id_usuario, correo],
-      async (err) => {
-        if (err) console.error("Error limpiando tabla:", err);
+    const saltRounds = 10;
+    const adminClave = await bcrypt.hash("admin123", saltRounds);
+    const tatuadorClave = await bcrypt.hash("tatuador123", saltRounds);
 
-        // 2. Generamos el hash real usando la librería instalada en tu entorno
-        const saltRounds = 10;
-        const claveEncriptada = await bcrypt.hash(clavePlana, saltRounds);
+    db.query("DELETE FROM USUARIO WHERE id_usuario IN (1, 2) OR correo IN ('admin@estudio.com', 'carlos@estudio.com')", (err) => {
+      if (err) console.error("Error limpiando:", err);
 
-        // 3. Insertamos el administrador con el hash exacto
-        const query =
-          "INSERT INTO USUARIO (id_usuario, nombre, correo, clave, rol, estado) VALUES (?, ?, ?, ?, ?, ?)";
-        db.query(
-          query,
-          [id_usuario, nombre, correo, claveEncriptada, rol, estado],
-          (err, resultado) => {
-            if (err) {
-              console.error("❌ Error al insertar el usuario:", err.message);
-            } else {
-              console.log("==================================================");
-              console.log("✅ ¡Administrador semilla creado con éxito!");
-              console.log(`📧 Correo: ${correo}`);
-              console.log(`🔑 Contraseña: ${clavePlana}`);
-              console.log("==================================================");
-            }
-            db.end(); // Cerrar la conexión
-          },
-        );
-      },
-    );
+      const query = `
+        INSERT INTO USUARIO (id_usuario, nombre, correo, clave, rol, estado, eliminado, usuario_creacion)
+        VALUES 
+          (1, 'Admin Estudio', 'admin@estudio.com', ?, 'ADMINISTRADOR', 'ACTIVO', FALSE, 'SISTEMA'),
+          (2, 'Carlos Tatuador', 'carlos@estudio.com', ?, 'TATUADOR', 'ACTIVO', FALSE, 'SISTEMA')
+      `;
+
+      db.query(query, [adminClave, tatuadorClave], (err, res) => {
+        if (err) {
+          console.error("❌ Error al insertar usuarios semilla:", err.message);
+        } else {
+          console.log("==================================================");
+          console.log("✅ Usuarios semilla creados con éxito:");
+          console.log("📧 admin@estudio.com / admin123 (ADMINISTRADOR)");
+          console.log("📧 carlos@estudio.com / tatuador123 (TATUADOR)");
+          console.log("==================================================");
+        }
+        db.end();
+      });
+    });
   } catch (error) {
-    console.error("Error procesando el hash:", error);
+    console.error("Error:", error);
     db.end();
   }
 }
 
-registrarAdminSemilla();
+registrarSemillas();
