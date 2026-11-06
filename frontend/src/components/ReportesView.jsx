@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../services/api";
 
 export default function ReportesView() {
   const [fechaInicio, setFechaInicio] = useState("");
@@ -16,9 +16,7 @@ export default function ReportesView() {
 
     const inicializarHistorial = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:5000/api/reportes/historial-facturas",
-        );
+        const res = await api.get("/reportes/historial-facturas");
         if (estaActivo) setHistorial(res.data);
       } catch (err) {
         console.error("Error al cargar historial:", err);
@@ -36,9 +34,7 @@ export default function ReportesView() {
       return;
     }
     try {
-      const res = await axios.get(
-        `http://localhost:5000/api/reportes/comisiones?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`,
-      );
+      const res = await api.get(`/reportes/comisiones?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
       setComisiones(res.data);
       setError("");
     } catch (err) {
@@ -51,21 +47,18 @@ export default function ReportesView() {
   };
 
   const verFactura = async (numFactura) => {
+    if (!numFactura) {
+      alert("Identificador de factura no válido.");
+      return;
+    }
     setCargandoDetalle(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/facturas/${numFactura}/detalle`);
+      const res = await api.get(`/facturas/${numFactura}/detalle`);
       setFacturaDetalle(res.data);
     } catch (err) {
       alert(err.response?.data?.error || "Error al cargar factura");
     }
     setCargandoDetalle(false);
-  };
-
-  const generarCUFE = () => {
-    const chars = "0123456789abcdef";
-    let cufe = "";
-    for (let i = 0; i < 40; i++) cufe += chars[Math.floor(Math.random() * 16)];
-    return cufe;
   };
 
   return (
@@ -169,7 +162,7 @@ export default function ReportesView() {
           <>
             <input
               type="text"
-              placeholder="Buscar por numero, cliente o diseno..."
+              placeholder="Buscar por número, cliente o diseño..."
               value={busquedaHist}
               onChange={(e) => setBusquedaHist(e.target.value)}
               style={{
@@ -187,54 +180,58 @@ export default function ReportesView() {
           <div style={{ maxHeight: "220px", overflowY: "auto" }}>
             <ul>
               {historial.filter((h) => {
+                const num = h.id_factura || h.num_factura || "";
                 const q = busquedaHist.toLowerCase();
-                return !q || String(h.num_factura).includes(q) || h.nombre_cliente.toLowerCase().includes(q) || h.diseno.toLowerCase().includes(q);
-              }).map((h) => (
-                <li
-                  key={h.num_factura}
-                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                >
-                  <div>
-                    <strong>Factura #{h.num_factura}</strong> —{" "}
-                    <span style={{ color: "var(--accent-color)" }}>
-                      {h.diseno}
-                    </span>
-                    <br />
-                    <small style={{ color: "var(--text-muted)" }}>
-                      Cliente: {h.nombre_cliente} | Fecha:{" "}
-                      {h.fecha_emision.split("T")[0]}
-                    </small>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span
-                      style={{
-                        fontWeight: "bold",
-                        color: "var(--color-success)",
-                        fontSize: "16px",
-                      }}
-                    >
-                      ${parseFloat(h.total).toLocaleString("es-CO")}
-                    </span>
-                    <button
-                      onClick={() => verFactura(h.num_factura)}
-                      disabled={cargandoDetalle}
-                      style={{
-                        padding: "6px 14px",
-                        fontSize: "12px",
-                        fontWeight: "700",
-                        background: "rgba(52, 152, 218, 0.15)",
-                        color: "var(--color-info)",
-                        border: "1px solid var(--color-info)",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Ver
-                    </button>
-                  </div>
-                </li>
-              ))}
+                return !q || String(num).includes(q) || (h.nombre_cliente && h.nombre_cliente.toLowerCase().includes(q)) || (h.diseno && h.diseno.toLowerCase().includes(q));
+              }).map((h) => {
+                const facturaId = h.id_factura || h.num_factura;
+                return (
+                  <li
+                    key={facturaId}
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                  >
+                    <div>
+                      <strong>Factura #{facturaId}</strong> —{" "}
+                      <span style={{ color: "var(--accent-color)" }}>
+                        {h.diseno}
+                      </span>
+                      <br />
+                      <small style={{ color: "var(--text-muted)" }}>
+                        Cliente: {h.nombre_cliente} | Fecha:{" "}
+                        {h.fecha_emision ? h.fecha_emision.split("T")[0] : "N/A"}
+                      </small>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <span
+                        style={{
+                          fontWeight: "bold",
+                          color: "var(--color-success)",
+                          fontSize: "16px",
+                        }}
+                      >
+                        ${parseFloat(h.total).toLocaleString("es-CO")}
+                      </span>
+                      <button
+                        onClick={() => verFactura(facturaId)}
+                        disabled={cargandoDetalle}
+                        style={{
+                          padding: "6px 14px",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          background: "rgba(52, 152, 218, 0.15)",
+                          color: "var(--color-info)",
+                          border: "1px solid var(--color-info)",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Ver
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
           </>
@@ -265,7 +262,7 @@ export default function ReportesView() {
           </button>
 
           <h3 style={{ color: "var(--accent-color)" }}>
-            Factura Electronica No. FE-{String(facturaDetalle.num_factura).padStart(4, "0")}
+            Factura Electrónica No. FE-{String(facturaDetalle.id_factura || facturaDetalle.num_factura).padStart(4, "0")}
           </h3>
 
           <div style={{
@@ -287,14 +284,14 @@ export default function ReportesView() {
                 Adquiriente
               </strong>
               <p style={{ margin: "8px 0 0" }}>{facturaDetalle.nombre_cliente}</p>
-              <p style={{ color: "var(--text-muted)", margin: "2px 0" }}>CC: {facturaDetalle.id_cliente}</p>
+              <p style={{ color: "var(--text-muted)", margin: "2px 0" }}>Identificación: {facturaDetalle.id_cliente}</p>
               <p style={{ color: "var(--text-muted)", margin: "2px 0" }}>{facturaDetalle.correo_cliente}</p>
             </div>
           </div>
 
           <div style={{ fontSize: "13px", margin: "10px 0", color: "var(--text-muted)" }}>
-            <p><strong>Fecha Emision:</strong> {facturaDetalle.fecha_emision.split("T")[0]}</p>
-            <p><strong>Diseno:</strong> {facturaDetalle.diseno} — {facturaDetalle.zona_cuerpo}</p>
+            <p><strong>Fecha Emisión:</strong> {facturaDetalle.fecha_emision ? facturaDetalle.fecha_emision.split("T")[0] : "N/A"}</p>
+            <p><strong>Diseño:</strong> {facturaDetalle.diseno} — {facturaDetalle.zona_cuerpo}</p>
           </div>
 
           {facturaDetalle.detalles && facturaDetalle.detalles.length > 0 && (
@@ -346,16 +343,16 @@ export default function ReportesView() {
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
               <span>Valor Estimado:</span>
-              <span>${parseFloat(facturaDetalle.valor_estimado).toLocaleString("es-CO")}</span>
+              <span>${parseFloat(facturaDetalle.valor_estimado || 0).toLocaleString("es-CO")}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", color: "var(--color-danger)" }}>
               <span>Anticipo Aplicado:</span>
-              <span>-${parseFloat(facturaDetalle.anticipo).toLocaleString("es-CO")}</span>
+              <span>-${parseFloat(facturaDetalle.anticipo || 0).toLocaleString("es-CO")}</span>
             </div>
             <hr style={{ borderColor: "var(--border-color)", margin: "8px 0" }} />
             <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "18px", fontWeight: "bold", color: "var(--accent-color)" }}>
               <span>TOTAL FACTURADO:</span>
-              <span>${parseFloat(facturaDetalle.total).toLocaleString("es-CO")}</span>
+              <span>${parseFloat(facturaDetalle.total || 0).toLocaleString("es-CO")}</span>
             </div>
           </div>
 

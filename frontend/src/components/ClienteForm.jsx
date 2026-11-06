@@ -1,9 +1,8 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 
 export default function ClienteForm({ onClienteCreado }) {
   const [formData, setFormData] = useState({
-    id_cliente: "",
     nombre: "",
     telefono: "",
     correo: "",
@@ -14,22 +13,16 @@ export default function ClienteForm({ onClienteCreado }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !formData.id_cliente ||
-      !formData.nombre ||
-      !formData.telefono ||
-      !formData.correo
-    ) {
+    if (!formData.nombre || !formData.telefono || !formData.correo) {
       setError("Todos los campos son obligatorios.");
       return;
     }
 
     try {
-      await axios.post("http://localhost:5000/api/clientes", formData);
-      setExito("Cliente registrado con exito!");
+      await api.post("/clientes", formData);
+      setExito("¡Cliente registrado con éxito!");
       setError("");
-      setFormData({ id_cliente: "", nombre: "", telefono: "", correo: "" });
-      cargarSiguienteId();
+      setFormData({ nombre: "", telefono: "", correo: "" });
       if (onClienteCreado) onClienteCreado();
     } catch (err) {
       setExito("");
@@ -52,14 +45,6 @@ export default function ClienteForm({ onClienteCreado }) {
 
       <form onSubmit={handleSubmit}>
         <input
-          type="number"
-          placeholder="Cedula / ID Cliente"
-          value={formData.id_cliente}
-          onChange={(e) =>
-            setFormData({ ...formData, id_cliente: e.target.value })
-          }
-        />
-        <input
           type="text"
           placeholder="Nombre Completo"
           value={formData.nombre}
@@ -67,7 +52,7 @@ export default function ClienteForm({ onClienteCreado }) {
         />
         <input
           type="text"
-          placeholder="Telefono de Contacto"
+          placeholder="Teléfono de Contacto"
           value={formData.telefono}
           onChange={(e) =>
             setFormData({ ...formData, telefono: e.target.value })
@@ -75,7 +60,7 @@ export default function ClienteForm({ onClienteCreado }) {
         />
         <input
           type="email"
-          placeholder="Correo Electronico"
+          placeholder="Correo Electrónico"
           value={formData.correo}
           onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
         />

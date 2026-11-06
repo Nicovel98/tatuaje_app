@@ -1,85 +1,119 @@
 import { useState } from "react";
-import axios from "axios";
+import ClienteModal from "./ClienteModal";
 
-export default function ClienteList({ clientes, onClienteActualizado }) {
-  const [editando, setEditando] = useState(null);
-  const [editData, setEditData] = useState({});
+export default function ClienteList({ clientes, onClienteActualizado, usuarioActivo }) {
+  const [busqueda, setBusqueda] = useState("");
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
 
-  const iniciarEdicion = (c) => {
-    setEditando(c.id_cliente);
-    setEditData({ nombre: c.nombre, telefono: c.telefono, correo: c.correo });
+  const filtrados = (clientes || []).filter((c) => {
+    const texto = busqueda.toLowerCase();
+    return (
+      (c.nombre || "").toLowerCase().includes(texto) ||
+      (c.telefono || "").toLowerCase().includes(texto) ||
+      (c.correo || "").toLowerCase().includes(texto) ||
+      String(c.id_cliente).includes(texto)
+    );
+  });
+
+  const abrirModalCrear = () => {
+    setClienteSeleccionado(null);
+    setModalAbierto(true);
   };
 
-  const guardarEdicion = async (id) => {
-    try {
-      await axios.put(`http://localhost:5000/api/clientes/${id}`, editData);
-      setEditando(null);
-      if (onClienteActualizado) onClienteActualizado();
-    } catch (err) {
-      alert(err.response?.data?.error || "Error al actualizar");
-    }
+  const abrirModalEditar = (c) => {
+    setClienteSeleccionado(c);
+    setModalAbierto(true);
+  };
+
+  const cerrarModal = () => {
+    setModalAbierto(false);
+    setClienteSeleccionado(null);
   };
 
   return (
-    <div className="card-list">
-      <h3>Clientes Registrados</h3>
-      {clientes.length === 0 ? (
-        <p>No hay clientes registrados.</p>
+    <div className="card-table" style={{ width: "100%" }}>
+      <div className="view-header">
+        <div>
+          <h3 style={{ margin: 0, color: "var(--accent-color)" }}>Directorio de Clientes</h3>
+          <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--text-muted)" }}>
+            Total de clientes registrados: {clientes?.length || 0}
+          </p>
+        </div>
+        <button className="btn-crear-action" onClick={abrirModalCrear}>
+          <span>+</span> Nuevo Cliente
+        </button>
+      </div>
+
+      <input
+        type="text"
+        placeholder="Buscar cliente por nombre, teléfono, correo o identificación..."
+        value={busqueda}
+        onChange={(e) => setBusqueda(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "10px 14px",
+          marginBottom: "16px",
+          borderRadius: "8px",
+          border: "1px solid var(--border-color)",
+          background: "var(--bg-input)",
+          color: "var(--text-main)",
+          fontSize: "13px",
+          boxSizing: "border-box",
+        }}
+      />
+
+      {filtrados.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "30px 20px", color: "var(--text-muted)" }}>
+          {(!clientes || clientes.length === 0)
+            ? "No hay clientes registrados en el sistema."
+            : "No se encontraron clientes con el criterio de búsqueda."}
+        </div>
       ) : (
-        <ul>
-          {clientes.map((c) => (
-            <li key={c.id_cliente} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              {editando === c.id_cliente ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
-                  <input type="text" value={editData.nombre} style={{ padding: "6px 10px", fontSize: "13px" }}
-                    onChange={(e) => setEditData({ ...editData, nombre: e.target.value })} />
-                  <input type="text" value={editData.telefono} style={{ padding: "6px 10px", fontSize: "13px" }}
-                    onChange={(e) => setEditData({ ...editData, telefono: e.target.value })} />
-                  <input type="email" value={editData.correo} style={{ padding: "6px 10px", fontSize: "13px" }}
-                    onChange={(e) => setEditData({ ...editData, correo: e.target.value })} />
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    <button onClick={() => guardarEdicion(c.id_cliente)}
-                      style={{ padding: "5px 12px", fontSize: "11px", background: "var(--color-success)", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "700" }}>
-                      Guardar
-                    </button>
-                    <button onClick={() => setEditando(null)}
-                      style={{ padding: "5px 12px", fontSize: "11px", background: "var(--color-danger)", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "700" }}>
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <div>
-                      <strong>CC:</strong> {c.id_cliente} | <strong>{c.nombre}</strong>
-                    </div>
-                    <small style={{ color: "var(--text-muted)" }}>
-                      Tel: {c.telefono} | {c.correo}
-                    </small>
-                  </div>
+        <table>
+          <thead>
+            <tr>
+              <th style={{ width: "120px" }}>Identificación</th>
+              <th>Nombre Completo</th>
+              <th>Teléfono</th>
+              <th>Correo Electrónico</th>
+              <th style={{ textAlign: "center", width: "100px" }}>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtrados.map((c) => (
+              <tr key={c.id_cliente}>
+                <td>
+                  <strong style={{ color: "var(--accent-color)" }}>{c.id_cliente}</strong>
+                </td>
+                <td>
+                  <strong>{c.nombre}</strong>
+                </td>
+                <td>{c.telefono}</td>
+                <td>{c.correo}</td>
+                <td style={{ textAlign: "center" }}>
                   <button
-                    onClick={() => iniciarEdicion(c)}
-                    title="Editar cliente"
-                    style={{
-                      background: "transparent",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "6px",
-                      padding: "6px 10px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      color: "var(--text-muted)",
-                      flexShrink: 0,
-                    }}
+                    className="btn-edit-sm"
+                    onClick={() => abrirModalEditar(c)}
+                    title="Editar información"
                   >
-                    &#9998;
+                    <span>✎</span> Editar
                   </button>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
+
+      {/* Modal Popup para Creación y Edición */}
+      <ClienteModal
+        isOpen={modalAbierto}
+        onClose={cerrarModal}
+        clienteEditar={clienteSeleccionado}
+        usuarioActivo={usuarioActivo}
+        onGuardado={onClienteActualizado}
+      />
     </div>
   );
 }

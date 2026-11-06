@@ -1,27 +1,26 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "./services/api";
 import LoginForm from "./components/LoginForm";
-import ClienteForm from "./components/ClienteForm";
 import ClienteList from "./components/ClienteList";
-import TatuajeForm from "./components/TatuajeForm";
 import TatuajeList from "./components/TatuajeList";
-import TarifaForm from "./components/TarifaForm";
-import TarifaList from "./components/TarifaList";
-import SesionForm from "./components/SesionForm";
+import SesionList from "./components/SesionList";
 import FacturaForm from "./components/FacturaForm";
 import ReportesView from "./components/ReportesView";
+import UsuarioList from "./components/UsuarioList";
 import "./App.css";
 
 function App() {
   const [usuario, setUsuario] = useState(null);
   const [vistaActiva, setVistaActiva] = useState("clientes");
+  const [subVistaTatuajes, setSubVistaTatuajes] = useState("tatuajes"); // "tatuajes" | "sesiones"
   const [clientes, setClientes] = useState([]);
   const [tatuajes, setTatuajes] = useState([]);
-  const [tarifas, setTarifas] = useState([]);
+  const [sesiones, setSesiones] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
 
   const cargarClientes = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/clientes");
+      const res = await api.get("/clientes");
       setClientes(res.data);
     } catch (err) {
       console.error("Error cargando clientes", err);
@@ -30,19 +29,28 @@ function App() {
 
   const cargarTatuajes = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tatuajes");
+      const res = await api.get("/tatuajes");
       setTatuajes(res.data);
     } catch (err) {
       console.error("Error cargando tatuajes", err);
     }
   };
 
-  const cargarTarifas = async () => {
+  const cargarSesiones = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tarifas");
-      setTarifas(res.data);
+      const res = await api.get("/sesiones");
+      setSesiones(res.data);
     } catch (err) {
-      console.error("Error cargando tarifas", err);
+      console.error("Error cargando sesiones", err);
+    }
+  };
+
+  const cargarUsuarios = async () => {
+    try {
+      const res = await api.get("/usuarios");
+      setUsuarios(res.data);
+    } catch (err) {
+      console.error("Error cargando usuarios", err);
     }
   };
 
@@ -50,7 +58,8 @@ function App() {
     setUsuario(null);
     setClientes([]);
     setTatuajes([]);
-    setTarifas([]);
+    setSesiones([]);
+    setUsuarios([]);
   };
 
   useEffect(() => {
@@ -58,15 +67,17 @@ function App() {
     let estaActivo = true;
     const cargarDatos = async () => {
       try {
-        const [resC, resT, resTar] = await Promise.all([
-          axios.get("http://localhost:5000/api/clientes"),
-          axios.get("http://localhost:5000/api/tatuajes"),
-          axios.get("http://localhost:5000/api/tarifas"),
+        const [resC, resT, resS, resU] = await Promise.all([
+          api.get("/clientes"),
+          api.get("/tatuajes"),
+          api.get("/sesiones"),
+          api.get("/usuarios"),
         ]);
         if (estaActivo) {
           setClientes(resC.data);
           setTatuajes(resT.data);
-          setTarifas(resTar.data);
+          setSesiones(resS.data);
+          setUsuarios(resU.data);
         }
       } catch (err) {
         console.error("Error al sincronizar datos", err);
@@ -110,17 +121,19 @@ function App() {
 
         <nav className="sidebar-menu">
           <button className={vistaActiva === "clientes" ? "active" : ""} onClick={() => setVistaActiva("clientes")}>
-            Gestion Clientes
+            Gestión Clientes
           </button>
           <button className={vistaActiva === "tatuajes" ? "active" : ""} onClick={() => setVistaActiva("tatuajes")}>
-            Disenos y Tatuajes
-          </button>
-          <button className={vistaActiva === "tarifas" ? "active" : ""} onClick={() => setVistaActiva("tarifas")}>
-            Catalogo Tarifas
+            Diseños y Sesiones
           </button>
           <button className={vistaActiva === "facturacion" ? "active" : ""} onClick={() => setVistaActiva("facturacion")}>
-            Facturacion
+            Facturación
           </button>
+          {usuario.rol === "ADMINISTRADOR" && (
+            <button className={vistaActiva === "usuarios" ? "active" : ""} onClick={() => setVistaActiva("usuarios")}>
+              Gestión Usuarios
+            </button>
+          )}
           {usuario.rol === "ADMINISTRADOR" && (
             <button className={vistaActiva === "reportes" ? "active" : ""} onClick={() => setVistaActiva("reportes")}>
               Cierre y Reportes
@@ -129,53 +142,96 @@ function App() {
         </nav>
 
         <button className="btn-sidebar-logout" onClick={handleLogout}>
-          Cerrar Sesion
+          Cerrar Sesión
         </button>
       </aside>
 
       <main className="content-area">
+        {/* VISTA: GESTIÓN DE CLIENTES */}
         {vistaActiva === "clientes" && (
           <div className="fade-in animate-view">
-            <h2>Modulo de Clientes</h2>
-            <div className="view-grid">
-              <ClienteForm onClienteCreado={cargarClientes} />
-              <ClienteList clientes={clientes} onClienteActualizado={cargarClientes} />
-            </div>
+            <h2>Módulo de Clientes</h2>
+            <ClienteList
+              clientes={clientes}
+              onClienteActualizado={cargarClientes}
+              usuarioActivo={usuario}
+            />
           </div>
         )}
 
+        {/* VISTA: DISEÑOS Y SESIONES (CON PESTAÑAS) */}
         {vistaActiva === "tatuajes" && (
           <div className="fade-in animate-view">
-            <h2>Modulo de Disenos y Tatuajes</h2>
-            <div className="view-grid">
-              <div className="columna-view">
-                <TatuajeForm clientes={clientes} tarifas={tarifas} onTatuajeCreado={cargarTatuajes} />
-                <SesionForm tatuajes={tatuajes} tarifas={tarifas} usuarioActivo={usuario} onSesionCreada={cargarTatuajes} />
-              </div>
-              <TatuajeList tatuajes={tatuajes} onTatuajeActualizado={cargarTatuajes} />
+            <h2>Módulo de Diseños y Sesiones</h2>
+            <div className="view-tabs">
+              <button
+                className={`view-tab-btn ${subVistaTatuajes === "tatuajes" ? "active" : ""}`}
+                onClick={() => setSubVistaTatuajes("tatuajes")}
+              >
+                🎨 Catálogo de Diseños
+              </button>
+              <button
+                className={`view-tab-btn ${subVistaTatuajes === "sesiones" ? "active" : ""}`}
+                onClick={() => setSubVistaTatuajes("sesiones")}
+              >
+                📅 Sesiones Agendadas
+              </button>
             </div>
+
+            {subVistaTatuajes === "tatuajes" ? (
+              <TatuajeList
+                tatuajes={tatuajes}
+                onTatuajeActualizado={() => {
+                  cargarTatuajes();
+                  cargarSesiones();
+                }}
+                usuarioActivo={usuario}
+              />
+            ) : (
+              <SesionList
+                sesiones={sesiones}
+                tatuajes={tatuajes}
+                clientes={clientes}
+                usuarios={usuarios}
+                usuarioActivo={usuario}
+                onSesionActualizada={() => {
+                  cargarSesiones();
+                  cargarTatuajes();
+                }}
+              />
+            )}
           </div>
         )}
 
-        {vistaActiva === "tarifas" && (
-          <div className="fade-in animate-view">
-            <h2>Catalogo de Tarifas y Tatuadores</h2>
-            <div className="view-grid">
-              <TarifaForm onTarifaCreada={cargarTarifas} />
-              <TarifaList tarifas={tarifas} onTarifaActualizada={cargarTarifas} />
-            </div>
-          </div>
-        )}
-
+        {/* VISTA: FACTURACIÓN ELECTRÓNICA */}
         {vistaActiva === "facturacion" && (
           <div className="fade-in animate-view">
-            <h2>Facturacion Electronica</h2>
-            <div style={{ maxWidth: "700px", margin: "0 auto" }}>
-              <FacturaForm tatuajes={tatuajes} usuarioActivo={usuario} onFacturaGenerada={cargarTatuajes} />
+            <h2>Facturación Electrónica</h2>
+            <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+              <FacturaForm
+                usuarioActivo={usuario}
+                onFacturaGenerada={() => {
+                  cargarTatuajes();
+                  cargarSesiones();
+                }}
+              />
             </div>
           </div>
         )}
 
+        {/* VISTA: GESTIÓN DE USUARIOS (ADMINISTRADOR) */}
+        {vistaActiva === "usuarios" && usuario.rol === "ADMINISTRADOR" && (
+          <div className="fade-in animate-view">
+            <h2>Módulo de Gestión de Usuarios y Staff</h2>
+            <UsuarioList
+              usuarios={usuarios}
+              onUsuarioActualizado={cargarUsuarios}
+              usuarioActivo={usuario}
+            />
+          </div>
+        )}
+
+        {/* VISTA: REPORTES (ADMINISTRADOR) */}
         {vistaActiva === "reportes" && usuario.rol === "ADMINISTRADOR" && (
           <ReportesView />
         )}

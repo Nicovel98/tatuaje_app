@@ -1,3 +1,9 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 /* ==========================================================================
    1. VARIABLES GLOBALES Y CONFIGURACIÓN BASE (Tema Dark Premium)
    ========================================================================== */
@@ -706,4 +712,261 @@ li strong {
     margin: 2px 0;
     color: #666 !important;
   }
+}
+
+
+/* ==========================================================================
+   8. SISTEMA DE POPUPS / MODALES Y VISTAS DE REGISTROS (NUEVO)
+   ========================================================================== */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(244, 208, 63, 0.1);
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--accent-color);
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.modal-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.modal-close-btn:hover {
+  color: var(--accent-color);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.modal-body {
+  padding: 22px 24px;
+  overflow-y: auto;
+  max-height: calc(90vh - 120px);
+}
+
+.modal-body form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Cabeceras de vista con botón de acción */
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.view-header h2 {
+  margin-bottom: 0 !important;
+}
+
+.btn-crear-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent-color);
+  color: #121214;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  box-shadow: 0 4px 14px rgba(244, 208, 63, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-crear-action:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(244, 208, 63, 0.35);
+}
+
+.btn-crear-action:active {
+  transform: translateY(0);
+}
+
+/* Subpestañas de navegación */
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+.view-tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-tab-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.view-tab-btn.active {
+  background: rgba(244, 208, 63, 0.12);
+  color: var(--accent-color);
+  border-color: rgba(244, 208, 63, 0.25);
+}
+
+/* Botones de edición en filas o tarjetas */
+.btn-edit-sm {
+  background: rgba(244, 208, 63, 0.1);
+  border: 1px solid rgba(244, 208, 63, 0.25);
+  color: var(--accent-color);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-edit-sm:hover {
+  background: var(--accent-color);
+  color: #121214;
+  border-color: var(--accent-color);
+}
+
+/* Selector dual para Tatuaje en Sesión */
+.dual-mode-selector {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  background: var(--bg-input);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.dual-mode-option {
+  flex: 1;
+  text-align: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  color: var(--text-muted);
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.dual-mode-option:hover {
+  color: var(--text-main);
+}
+
+.dual-mode-option.active {
+  background: var(--bg-card);
+  color: var(--accent-color);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(244, 208, 63, 0.2);
+}
+
+.embedded-subform {
+  border: 1px dashed rgba(244, 208, 63, 0.35);
+  background: rgba(244, 208, 63, 0.02);
+  border-radius: 8px;
+  padding: 14px;
+  margin: 10px 0;
+}
+
+.embedded-subform h4 {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  color: var(--accent-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }

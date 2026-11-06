@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../services/api";
 
 export default function TarifaForm({ onTarifaCreada }) {
   const [formData, setFormData] = useState({
@@ -14,7 +14,7 @@ export default function TarifaForm({ onTarifaCreada }) {
 
   const cargarSiguienteId = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tarifas/siguiente-id");
+      const res = await api.get("/tarifas/siguiente-id");
       setSiguienteId(res.data.siguiente);
     } catch (err) {
       console.error("Error cargando siguiente ID", err);
@@ -28,7 +28,7 @@ export default function TarifaForm({ onTarifaCreada }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.id_tarifa || !formData.tipo_trabajo || !formData.valor_hora) {
-      setError("ID, tipo de trabajo y valor por hora son obligatorios.");
+      setError("Código de tarifa, tipo de trabajo y valor por hora son obligatorios.");
       return;
     }
     if (parseFloat(formData.valor_hora) <= 0) {
@@ -37,12 +37,12 @@ export default function TarifaForm({ onTarifaCreada }) {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/tarifas", formData);
-      setExito("Tarifa guardada con exito.");
+      await api.post("/tarifas", formData);
+      setExito("Tarifa guardada con éxito.");
       setError("");
       cargarSiguienteId();
       setFormData({ id_tarifa: "", tipo_trabajo: "", valor_hora: "", tatuador_nombre: "" });
-      onTarifaCreada();
+      if (onTarifaCreada) onTarifaCreada();
     } catch (err) {
       setExito("");
       setError(err.response?.data?.error || "Error al guardar la tarifa.");
@@ -58,7 +58,7 @@ export default function TarifaForm({ onTarifaCreada }) {
       )}
       <form onSubmit={handleSubmit}>
         <div style={{ position: "relative" }}>
-          <input type="number" placeholder="Codigo Tarifa / ID" value={formData.id_tarifa}
+          <input type="number" placeholder="Código de Tarifa" value={formData.id_tarifa}
             onChange={(e) => setFormData({ ...formData, id_tarifa: e.target.value })} />
           {siguienteId && !formData.id_tarifa && (
             <button
