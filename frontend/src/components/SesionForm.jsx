@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 
 export default function SesionForm({
   tatuajes,
@@ -16,6 +16,7 @@ export default function SesionForm({
     duracion_horas: "2.0",
     es_retoque: "N",
     valor: "",
+    anticipo: "0",
     ultima_sesion: false,
   });
 
@@ -28,7 +29,20 @@ export default function SesionForm({
     setExito("");
 
     if (!formData.tatuaje_id || !formData.cliente_id || !formData.usuario_id || !formData.valor) {
-      setError("Todos los campos de la sesión son obligatorios.");
+      setError("Todos los campos obligatorios de la sesión deben ser completados.");
+      return;
+    }
+
+    const valorNum = parseFloat(formData.valor || 0);
+    const anticipoNum = parseFloat(formData.anticipo || 0);
+
+    if (anticipoNum < 0) {
+      setError("El anticipo no puede ser negativo.");
+      return;
+    }
+
+    if (anticipoNum > valorNum) {
+      setError("El anticipo no puede superar el valor de la sesión.");
       return;
     }
 
@@ -40,12 +54,13 @@ export default function SesionForm({
         fecha: formData.fecha,
         duracion_horas: parseFloat(formData.duracion_horas),
         es_retoque: formData.es_retoque,
-        valor: parseFloat(formData.valor),
+        valor: valorNum,
+        anticipo: anticipoNum,
         ultima_sesion: formData.ultima_sesion,
         usuario_creacion: usuarioActivo?.nombre || "SISTEMA",
       };
 
-      await axios.post("http://localhost:5000/api/sesiones", payload);
+      await api.post("/sesiones", payload);
       setExito("¡Sesión registrada exitosamente!");
       setFormData({
         tatuaje_id: "",
@@ -55,6 +70,7 @@ export default function SesionForm({
         duracion_horas: "2.0",
         es_retoque: "N",
         valor: "",
+        anticipo: "0",
         ultima_sesion: false,
       });
       if (onSesionCreada) onSesionCreada();
@@ -67,7 +83,7 @@ export default function SesionForm({
     <div className="card-form" style={{ marginTop: "20px" }}>
       <h3>Agendar Nueva Sesión de Tatuaje</h3>
       <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "12px" }}>
-        Vinculación 1:1 con cliente, diseño asignado y tatuador responsable.
+        Asigne fecha, cliente, diseño y tatuador responsable.
       </p>
 
       {error && <p className="error">{error}</p>}
@@ -84,7 +100,7 @@ export default function SesionForm({
           />
         </div>
 
-        <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Cliente (Relación 1:1 con Sesión)</label>
+        <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Cliente</label>
         <select
           value={formData.cliente_id}
           onChange={(e) => setFormData({ ...formData, cliente_id: e.target.value })}
@@ -93,7 +109,7 @@ export default function SesionForm({
           <option value="">-- Selecciona el cliente --</option>
           {(clientes || []).map((c) => (
             <option key={c.id_cliente} value={c.id_cliente}>
-              {c.nombre} (ID: #{c.id_cliente})
+              {c.nombre}
             </option>
           ))}
         </select>
@@ -154,6 +170,15 @@ export default function SesionForm({
               value={formData.valor}
               onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
               required
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Anticipo ($)</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={formData.anticipo}
+              onChange={(e) => setFormData({ ...formData, anticipo: e.target.value })}
             />
           </div>
         </div>

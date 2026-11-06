@@ -1,6 +1,7 @@
 class Usuario {
   constructor({
     id_usuario,
+    identificacion = null,
     nombre,
     correo,
     clave,
@@ -13,6 +14,7 @@ class Usuario {
     usuario_actualizacion = null,
   }) {
     this.id_usuario = id_usuario;
+    this.identificacion = identificacion;
     this.nombre = nombre;
     this.correo = correo;
     this.clave = clave;

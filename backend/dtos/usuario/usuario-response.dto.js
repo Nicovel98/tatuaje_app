@@ -3,6 +3,7 @@ class UsuarioResponseDto {
     if (!model) return null;
     return {
       id_usuario: model.id_usuario,
+      identificacion: model.identificacion,
       nombre: model.nombre,
       correo: model.correo,
       rol: model.rol,

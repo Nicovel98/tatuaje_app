@@ -3,7 +3,7 @@ const Usuario = require("../models/Usuario");
 const bcrypt = require("bcrypt");
 
 class UsuarioService {
-  async crearUsuario({ id_usuario, nombre, correo, clave, rol, usuario_creacion = "SISTEMA" }) {
+  async crearUsuario({ id_usuario, identificacion, nombre, correo, clave, rol, usuario_creacion = "SISTEMA" }) {
     if (!nombre || !correo || !clave || !rol) {
       throw new Error("Nombre, correo, contraseña y rol son obligatorios.");
     }
@@ -24,6 +24,7 @@ class UsuarioService {
     const claveHash = await bcrypt.hash(clave, saltRounds);
 
     const payload = {
+      identificacion: identificacion ? String(identificacion).trim() : null,
       nombre,
       correo,
       clave: claveHash,
@@ -58,6 +59,7 @@ class UsuarioService {
     const payload = {
       usuario_actualizacion: usuarioModificador,
     };
+    if (datos.identificacion !== undefined) payload.identificacion = datos.identificacion ? String(datos.identificacion).trim() : null;
     if (datos.nombre !== undefined) payload.nombre = datos.nombre;
     if (datos.correo !== undefined) payload.correo = datos.correo;
     if (datos.rol !== undefined) payload.rol = datos.rol;

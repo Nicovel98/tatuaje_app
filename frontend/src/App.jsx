@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "./services/api";
 import LoginForm from "./components/LoginForm";
 import ClienteList from "./components/ClienteList";
 import TatuajeList from "./components/TatuajeList";
@@ -20,7 +20,7 @@ function App() {
 
   const cargarClientes = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/clientes");
+      const res = await api.get("/clientes");
       setClientes(res.data);
     } catch (err) {
       console.error("Error cargando clientes", err);
@@ -29,7 +29,7 @@ function App() {
 
   const cargarTatuajes = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tatuajes");
+      const res = await api.get("/tatuajes");
       setTatuajes(res.data);
     } catch (err) {
       console.error("Error cargando tatuajes", err);
@@ -38,7 +38,7 @@ function App() {
 
   const cargarSesiones = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/sesiones");
+      const res = await api.get("/sesiones");
       setSesiones(res.data);
     } catch (err) {
       console.error("Error cargando sesiones", err);
@@ -47,7 +47,7 @@ function App() {
 
   const cargarUsuarios = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/usuarios");
+      const res = await api.get("/usuarios");
       setUsuarios(res.data);
     } catch (err) {
       console.error("Error cargando usuarios", err);
@@ -68,10 +68,10 @@ function App() {
     const cargarDatos = async () => {
       try {
         const [resC, resT, resS, resU] = await Promise.all([
-          axios.get("http://localhost:5000/api/clientes"),
-          axios.get("http://localhost:5000/api/tatuajes"),
-          axios.get("http://localhost:5000/api/sesiones"),
-          axios.get("http://localhost:5000/api/usuarios"),
+          api.get("/clientes"),
+          api.get("/tatuajes"),
+          api.get("/sesiones"),
+          api.get("/usuarios"),
         ]);
         if (estaActivo) {
           setClientes(resC.data);

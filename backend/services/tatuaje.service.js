@@ -9,15 +9,10 @@ class TatuajeService {
     estado = "PENDIENTE",
     horas_estimadas = 1.0,
     valor_estimado,
-    anticipo = 0.0,
     usuario_creacion = "SISTEMA",
   }) {
     if (!diseno || !zona_cuerpo || valor_estimado === undefined) {
       throw new Error("Debe ingresar diseño, zona del cuerpo y valor estimado.");
-    }
-
-    if (Number(anticipo) > Number(valor_estimado)) {
-      throw new Error("El anticipo no puede ser superior al valor total estimado.");
     }
 
     if (id_tatuaje) {
@@ -33,7 +28,6 @@ class TatuajeService {
       estado,
       horas_estimadas: Number(horas_estimadas),
       valor_estimado: Number(valor_estimado),
-      anticipo: Number(anticipo),
       fecha_finalizacion: estado === "FINALIZADO" ? new Date().toISOString().split("T")[0] : null,
       eliminado: false,
       usuario_creacion,
@@ -53,12 +47,6 @@ class TatuajeService {
       throw new Error("Tatuaje no encontrado.");
     }
 
-    if (datos.valor_estimado !== undefined && datos.anticipo !== undefined) {
-      if (Number(datos.anticipo) > Number(datos.valor_estimado)) {
-        throw new Error("El anticipo no puede ser superior al valor total estimado.");
-      }
-    }
-
     const payload = {
       usuario_actualizacion: usuarioModificador,
     };
@@ -66,7 +54,6 @@ class TatuajeService {
     if (datos.zona_cuerpo !== undefined) payload.zona_cuerpo = datos.zona_cuerpo;
     if (datos.horas_estimadas !== undefined) payload.horas_estimadas = Number(datos.horas_estimadas);
     if (datos.valor_estimado !== undefined) payload.valor_estimado = Number(datos.valor_estimado);
-    if (datos.anticipo !== undefined) payload.anticipo = Number(datos.anticipo);
     if (datos.estado !== undefined) {
       payload.estado = datos.estado;
       if (datos.estado === "FINALIZADO") {

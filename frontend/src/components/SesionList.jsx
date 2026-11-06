@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 import SesionModal from "./SesionModal";
 
 export default function SesionList({
@@ -18,9 +18,9 @@ export default function SesionList({
 
   const filtradas = (sesiones || []).filter((s) => {
     const texto = busqueda.toLowerCase();
-    const nombreCliente = s.Cliente?.nombre || s.cliente_nombre || "";
-    const disenoTatuaje = s.Tatuaje?.diseno || s.tatuaje_diseno || "";
-    const nombreTatuador = s.Usuario?.nombre || s.usuario_nombre || "";
+    const nombreCliente = s.cliente?.nombre || s.Cliente?.nombre || s.cliente_nombre || "";
+    const disenoTatuaje = s.tatuaje?.diseno || s.Tatuaje?.diseno || s.tatuaje_diseno || "";
+    const nombreTatuador = s.tatuador?.nombre || s.Usuario?.nombre || s.usuario_nombre || "";
     return (
       String(s.id_sesion).includes(texto) ||
       String(s.fecha).includes(texto) ||
@@ -50,7 +50,7 @@ export default function SesionList({
       return;
     }
     try {
-      await axios.delete(`http://localhost:5000/api/sesiones/${id_sesion}`, {
+      await api.delete(`/sesiones/${id_sesion}`, {
         data: { usuario_modificador: usuarioActivo?.nombre || "ADMIN" },
       });
       setExito(`Sesión #${id_sesion} eliminada.`);
@@ -61,11 +61,6 @@ export default function SesionList({
       setExito("");
     }
   };
-
-  // Sugerir ID de sesión
-  const ids = (sesiones || []).map((s) => Number(s.id_sesion)).filter((id) => !isNaN(id));
-  const maxId = ids.length > 0 ? Math.max(...ids) : 300;
-  const siguienteIdSugerido = String(maxId + 1);
 
   return (
     <div className="card-table" style={{ width: "100%" }}>
@@ -86,7 +81,7 @@ export default function SesionList({
 
       <input
         type="text"
-        placeholder="Buscar sesión por cliente, diseño, tatuador, fecha o ID..."
+        placeholder="Buscar sesión por cliente, diseño, tatuador o fecha..."
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
         style={{
@@ -112,22 +107,23 @@ export default function SesionList({
         <table>
           <thead>
             <tr>
-              <th style={{ width: "90px" }}>ID Sesión</th>
+              <th style={{ width: "80px" }}>Sesión</th>
               <th>Fecha</th>
               <th>Cliente</th>
               <th>Diseño / Tatuaje</th>
               <th>Tatuador</th>
               <th>Horas</th>
               <th>Valor Liquidado</th>
+              <th>Anticipo</th>
               <th>Tipo</th>
               <th style={{ textAlign: "center", width: "130px" }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filtradas.map((s) => {
-              const clienteNombre = s.Cliente?.nombre || s.cliente_nombre || `Cliente #${s.cliente_id}`;
-              const disenoNombre = s.Tatuaje?.diseno || s.tatuaje_diseno || `Tatuaje #${s.tatuaje_id}`;
-              const tatuadorNombre = s.Usuario?.nombre || s.usuario_nombre || `Staff #${s.usuario_id}`;
+              const clienteNombre = s.cliente?.nombre || s.Cliente?.nombre || s.cliente_nombre || `Cliente #${s.cliente_id}`;
+              const disenoNombre = s.tatuaje?.diseno || s.Tatuaje?.diseno || s.tatuaje_diseno || `Tatuaje #${s.tatuaje_id}`;
+              const tatuadorNombre = s.tatuador?.nombre || s.Usuario?.nombre || s.usuario_nombre || `Staff #${s.usuario_id}`;
 
               return (
                 <tr key={s.id_sesion}>
@@ -143,6 +139,15 @@ export default function SesionList({
                   <td>{s.duracion_horas}h</td>
                   <td>
                     <strong>${Number(s.valor).toLocaleString("es-CO")}</strong>
+                  </td>
+                  <td>
+                    {Number(s.anticipo) > 0 ? (
+                      <span style={{ color: "var(--accent-color)", fontWeight: "600" }}>
+                        ${Number(s.anticipo).toLocaleString("es-CO")}
+                      </span>
+                    ) : (
+                      <span style={{ color: "var(--text-muted)" }}>$0</span>
+                    )}
                   </td>
                   <td>
                     {s.es_retoque === "S" ? (
@@ -162,7 +167,7 @@ export default function SesionList({
                         onClick={() => abrirModalEditar(s)}
                         title="Editar sesión"
                       >
-                        <span>&#9998;</span> Editar
+                        <span>✎</span> Editar
                       </button>
                       <button
                         className="btn-danger-sm"

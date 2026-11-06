@@ -85,6 +85,51 @@ class FacturaService {
     return await facturaRepository.findWithDetails();
   }
 
+  async obtenerDetalle(id_factura) {
+    const factura = await facturaRepository.findByIdWithDetails(id_factura);
+    if (!factura) {
+      throw new Error(`Factura #${id_factura} no encontrada.`);
+    }
+
+    const sesion = factura.sesion;
+    const cliente = sesion?.cliente;
+    const tatuaje = sesion?.tatuaje;
+    const tatuador = sesion?.tatuador;
+
+    return {
+      id_factura: factura.id_factura,
+      num_factura: factura.id_factura,
+      fecha_emision: factura.fecha_emision,
+      estado: factura.estado,
+      horas_facturadas: factura.horas_facturadas,
+      valor_unitario: factura.valor_unitario,
+      subtotal: factura.subtotal,
+      total: factura.total,
+      tipo_pago: factura.tipo_pago,
+      fecha_pago: factura.fecha_pago,
+      monto_pagado: factura.monto_pagado,
+      anticipo: sesion ? Number(sesion.anticipo || 0) : 0,
+      valor_estimado: sesion ? Number(sesion.valor || 0) : Number(factura.subtotal),
+      id_cliente: cliente ? cliente.id_cliente : "N/A",
+      nombre_cliente: cliente ? cliente.nombre : "Cliente General",
+      correo_cliente: cliente ? cliente.correo : "N/A",
+      telefono_cliente: cliente ? cliente.telefono : "N/A",
+      diseno: tatuaje ? tatuaje.diseno : "Servicio de Tatuaje",
+      zona_cuerpo: tatuaje ? tatuaje.zona_cuerpo : "General",
+      nombre_tatuador: tatuador ? tatuador.nombre : "Staff",
+      detalles: [
+        {
+          tipo_trabajo: tatuaje ? tatuaje.diseno : "Sesión de Tatuaje",
+          es_retoque: sesion?.es_retoque || "N",
+          nombre_tatuador: tatuador ? tatuador.nombre : "Staff",
+          fecha: sesion ? sesion.fecha : factura.fecha_emision,
+          horas_facturadas: factura.horas_facturadas,
+          subtotal: factura.subtotal,
+        },
+      ],
+    };
+  }
+
   async eliminarFactura(id_factura, usuarioModificador = "ADMIN") {
     const factura = await facturaRepository.findById(id_factura);
     if (!factura) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../services/api";
 import Modal from "./Modal";
 
 export const ZONAS_CUERPO = [
@@ -36,7 +36,6 @@ export default function TatuajeModal({
     estado: "PENDIENTE",
     horas_estimadas: "2.0",
     valor_estimado: "",
-    anticipo: "0",
   });
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
@@ -51,7 +50,6 @@ export default function TatuajeModal({
         estado: tatuajeEditar.estado || "PENDIENTE",
         horas_estimadas: String(tatuajeEditar.horas_estimadas || "2.0"),
         valor_estimado: String(tatuajeEditar.valor_estimado || ""),
-        anticipo: String(tatuajeEditar.anticipo || "0"),
       });
     } else {
       setFormData({
@@ -61,7 +59,6 @@ export default function TatuajeModal({
         estado: "PENDIENTE",
         horas_estimadas: "2.0",
         valor_estimado: "",
-        anticipo: "0",
       });
     }
     setError("");
@@ -78,32 +75,24 @@ export default function TatuajeModal({
       return;
     }
 
-    if (parseFloat(formData.anticipo || 0) > parseFloat(formData.valor_estimado || 0)) {
-      setError("El anticipo no puede superar el valor estimado del tatuaje.");
-      return;
-    }
-
     setCargando(true);
     try {
       if (tatuajeEditar) {
-        await axios.put(`http://localhost:5000/api/tatuajes/${tatuajeEditar.id_tatuaje}`, {
+        await api.put(`/tatuajes/${tatuajeEditar.id_tatuaje}`, {
           diseno: formData.diseno,
           zona_cuerpo: zonaFinal,
           estado: formData.estado,
           horas_estimadas: parseFloat(formData.horas_estimadas || 1),
           valor_estimado: parseFloat(formData.valor_estimado),
-          anticipo: parseFloat(formData.anticipo || 0),
           usuario_modificador: usuarioActivo?.nombre || "ADMIN",
         });
       } else {
-        // ID autoincremental en base de datos
-        await axios.post("http://localhost:5000/api/tatuajes", {
+        await api.post("/tatuajes", {
           diseno: formData.diseno,
           zona_cuerpo: zonaFinal,
           estado: formData.estado,
           horas_estimadas: parseFloat(formData.horas_estimadas || 1),
           valor_estimado: parseFloat(formData.valor_estimado),
-          anticipo: parseFloat(formData.anticipo || 0),
           usuario_creacion: usuarioActivo?.nombre || "ADMIN",
         });
       }
@@ -124,8 +113,8 @@ export default function TatuajeModal({
       title={tatuajeEditar ? "Editar Diseño de Tatuaje" : "Nuevo Diseño de Tatuaje"}
       subtitle={
         tatuajeEditar
-          ? `Modificando especificaciones del diseño ID: ${tatuajeEditar.id_tatuaje}`
-          : "Ficha técnica del diseño. El identificador será generado automáticamente por el sistema."
+          ? `Modificando especificaciones del diseño #${tatuajeEditar.id_tatuaje}`
+          : "Ficha técnica y especificaciones del diseño."
       }
       maxWidth="550px"
     >
@@ -134,7 +123,7 @@ export default function TatuajeModal({
       <form onSubmit={handleSubmit}>
         {tatuajeEditar && (
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>ID Tatuaje:</span>
+            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Diseño:</span>
             <span style={{
               fontSize: "12px",
               fontWeight: "700",
@@ -143,7 +132,7 @@ export default function TatuajeModal({
               padding: "2px 8px",
               borderRadius: "4px",
             }}>
-              #{tatuajeEditar.id_tatuaje} (Autoincremental)
+              #{tatuajeEditar.id_tatuaje}
             </span>
           </div>
         )}
@@ -220,32 +209,19 @@ export default function TatuajeModal({
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "10px" }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
-              Anticipo / Abono Inicial ($)
-            </label>
-            <input
-              type="number"
-              placeholder="0"
-              value={formData.anticipo}
-              onChange={(e) => setFormData({ ...formData, anticipo: e.target.value })}
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
-              Estado del Proyecto
-            </label>
-            <select
-              value={formData.estado}
-              onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-            >
-              <option value="PENDIENTE">PENDIENTE</option>
-              <option value="EN_PROGRESO">EN PROGRESO</option>
-              <option value="FINALIZADO">FINALIZADO</option>
-              <option value="CANCELADO">CANCELADO</option>
-            </select>
-          </div>
+        <div>
+          <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
+            Estado del Proyecto
+          </label>
+          <select
+            value={formData.estado}
+            onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+          >
+            <option value="PENDIENTE">PENDIENTE</option>
+            <option value="EN_PROGRESO">EN PROGRESO</option>
+            <option value="FINALIZADO">FINALIZADO</option>
+            <option value="CANCELADO">CANCELADO</option>
+          </select>
         </div>
 
         <div className="modal-footer">

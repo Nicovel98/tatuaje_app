@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../services/api";
 import Modal from "./Modal";
 import { ZONAS_CUERPO } from "./TatuajeModal";
 
@@ -26,6 +26,7 @@ export default function SesionModal({
     duracion_horas: "2.0",
     es_retoque: "N",
     valor: "",
+    anticipo: "0",
     ultima_sesion: false,
   });
 
@@ -36,7 +37,6 @@ export default function SesionModal({
     zona_otra: "",
     horas_estimadas: "2.0",
     valor_estimado: "",
-    anticipo: "0",
   });
 
   useEffect(() => {
@@ -50,6 +50,7 @@ export default function SesionModal({
         duracion_horas: String(sesionEditar.duracion_horas || "2.0"),
         es_retoque: sesionEditar.es_retoque || "N",
         valor: String(sesionEditar.valor || ""),
+        anticipo: String(sesionEditar.anticipo || "0"),
         ultima_sesion: false,
       });
     } else {
@@ -62,6 +63,7 @@ export default function SesionModal({
         duracion_horas: "2.0",
         es_retoque: "N",
         valor: "",
+        anticipo: "0",
         ultima_sesion: false,
       });
 
@@ -71,7 +73,6 @@ export default function SesionModal({
         zona_otra: "",
         horas_estimadas: "2.0",
         valor_estimado: "",
-        anticipo: "0",
       });
     }
     setError("");
@@ -86,12 +87,24 @@ export default function SesionModal({
       return;
     }
 
+    const valorNum = parseFloat(formData.valor || 0);
+    const anticipoNum = parseFloat(formData.anticipo || 0);
+
+    if (anticipoNum < 0) {
+      setError("El anticipo no puede ser negativo.");
+      return;
+    }
+
+    if (anticipoNum > valorNum) {
+      setError("El anticipo no puede ser mayor al valor de la sesión.");
+      return;
+    }
+
     setCargando(true);
     try {
       let finalTatuajeId = formData.tatuaje_id;
 
       if (!sesionEditar && modoTatuaje === "nuevo") {
-        // 1. Validar y Crear Nuevo Tatuaje primero (ID Autoincremental)
         const zonaFinal = nuevoTatuaje.zona_cuerpo === "Otro" ? nuevoTatuaje.zona_otra : nuevoTatuaje.zona_cuerpo;
         if (!nuevoTatuaje.diseno || !zonaFinal || nuevoTatuaje.valor_estimado === "") {
           setError("Completa todos los campos obligatorios del nuevo tatuaje.");
@@ -99,19 +112,12 @@ export default function SesionModal({
           return;
         }
 
-        if (parseFloat(nuevoTatuaje.anticipo || 0) > parseFloat(nuevoTatuaje.valor_estimado || 0)) {
-          setError("El anticipo no puede ser mayor al valor total estimado del tatuaje.");
-          setCargando(false);
-          return;
-        }
-
-        const resTat = await axios.post("http://localhost:5000/api/tatuajes", {
+        const resTat = await api.post("/tatuajes", {
           diseno: nuevoTatuaje.diseno,
           zona_cuerpo: zonaFinal,
           estado: "EN_PROGRESO",
           horas_estimadas: parseFloat(nuevoTatuaje.horas_estimadas || 1),
           valor_estimado: parseFloat(nuevoTatuaje.valor_estimado),
-          anticipo: parseFloat(nuevoTatuaje.anticipo || 0),
           usuario_creacion: usuarioActivo?.nombre || "ADMIN",
         });
 
@@ -124,28 +130,30 @@ export default function SesionModal({
         }
       }
 
-      // 2. Crear o Actualizar Sesión (ID Autoincremental al crear)
+      // Crear o Actualizar Sesión
       if (sesionEditar) {
-        await axios.put(`http://localhost:5000/api/sesiones/${sesionEditar.id_sesion}`, {
+        await api.put(`/sesiones/${sesionEditar.id_sesion}`, {
           tatuaje_id: parseInt(finalTatuajeId),
           cliente_id: parseInt(formData.cliente_id),
           usuario_id: parseInt(formData.usuario_id),
           fecha: formData.fecha,
           duracion_horas: parseFloat(formData.duracion_horas),
           es_retoque: formData.es_retoque,
-          valor: parseFloat(formData.valor),
+          valor: valorNum,
+          anticipo: anticipoNum,
           ultima_sesion: formData.ultima_sesion,
           usuario_modificador: usuarioActivo?.nombre || "ADMIN",
         });
       } else {
-        await axios.post("http://localhost:5000/api/sesiones", {
+        await api.post("/sesiones", {
           tatuaje_id: parseInt(finalTatuajeId),
           cliente_id: parseInt(formData.cliente_id),
           usuario_id: parseInt(formData.usuario_id),
           fecha: formData.fecha,
           duracion_horas: parseFloat(formData.duracion_horas),
           es_retoque: formData.es_retoque,
-          valor: parseFloat(formData.valor),
+          valor: valorNum,
+          anticipo: anticipoNum,
           ultima_sesion: formData.ultima_sesion,
           usuario_creacion: usuarioActivo?.nombre || "ADMIN",
         });
@@ -168,7 +176,7 @@ export default function SesionModal({
       subtitle={
         sesionEditar
           ? `Modificando detalles de la sesión #${sesionEditar.id_sesion}`
-          : "Asigna cliente, tatuador y vincula un tatuaje existente o crea uno nuevo en el acto. (ID autoincremental)."
+          : "Asigna cliente, tatuador y vincula un diseño existente o crea uno nuevo en el acto."
       }
       maxWidth="620px"
     >
@@ -177,7 +185,7 @@ export default function SesionModal({
       <form onSubmit={handleSubmit}>
         {sesionEditar ? (
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>ID Sesión:</span>
+            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Sesión:</span>
             <span style={{
               fontSize: "12px",
               fontWeight: "700",
@@ -186,7 +194,7 @@ export default function SesionModal({
               padding: "2px 8px",
               borderRadius: "4px",
             }}>
-              #{sesionEditar.id_sesion} (Autoincremental)
+              #{sesionEditar.id_sesion}
             </span>
           </div>
         ) : null}
@@ -202,7 +210,7 @@ export default function SesionModal({
             />
           </div>
           <div style={{ flex: 1 }}>
-            <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Cliente (Relación 1:1)</label>
+            <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Cliente</label>
             <select
               value={formData.cliente_id}
               onChange={(e) => setFormData({ ...formData, cliente_id: e.target.value })}
@@ -211,7 +219,7 @@ export default function SesionModal({
               <option value="">-- Selecciona el cliente --</option>
               {(clientes || []).map((c) => (
                 <option key={c.id_cliente} value={c.id_cliente}>
-                  {c.nombre} (ID: #{c.id_cliente})
+                  {c.nombre}
                 </option>
               ))}
             </select>
@@ -234,9 +242,7 @@ export default function SesionModal({
           </select>
         </div>
 
-        {/* ========================================================
-            SECCIÓN DINÁMICA DE TATUAJE: ENLAZAR EXISTENTE VS CREAR NUEVO
-            ======================================================== */}
+        {/* SECCIÓN DINÁMICA DE TATUAJE */}
         <div style={{ marginTop: "6px" }}>
           <label style={{ fontSize: "12px", color: "var(--accent-color)", fontWeight: "700", display: "block", marginBottom: "6px" }}>
             Diseño de Tatuaje a Realizar
@@ -279,14 +285,14 @@ export default function SesionModal({
                 <option value="">-- Selecciona el diseño del catálogo --</option>
                 {(tatuajes || []).map((t) => (
                   <option key={t.id_tatuaje} value={t.id_tatuaje}>
-                    {t.diseno} ({t.zona_cuerpo}) - ${Number(t.valor_estimado).toLocaleString("es-CO")} [ID: #{t.id_tatuaje}]
+                    {t.diseno} ({t.zona_cuerpo}) - ${Number(t.valor_estimado).toLocaleString("es-CO")}
                   </option>
                 ))}
               </select>
             </div>
           ) : (
             <div className="embedded-subform">
-              <h4>Datos del Nuevo Tatuaje (ID se creará automáticamente)</h4>
+              <h4>Datos del Nuevo Tatuaje</h4>
               <div>
                 <label style={{ fontSize: "10px", color: "var(--text-muted)" }}>Nombre del Diseño</label>
                 <input
@@ -335,41 +341,30 @@ export default function SesionModal({
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: "10px", color: "var(--text-muted)" }}>Valor Estimado ($)</label>
-                  <input
-                    type="number"
-                    placeholder="Costo total"
-                    value={nuevoTatuaje.valor_estimado}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setNuevoTatuaje({ ...nuevoTatuaje, valor_estimado: val });
-                      if (!formData.valor || formData.valor === nuevoTatuaje.valor_estimado) {
-                        setFormData((prev) => ({ ...prev, valor: val }));
-                      }
-                    }}
-                    required
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: "10px", color: "var(--text-muted)" }}>Anticipo ($)</label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={nuevoTatuaje.anticipo}
-                    onChange={(e) => setNuevoTatuaje({ ...nuevoTatuaje, anticipo: e.target.value })}
-                  />
-                </div>
+              <div style={{ marginTop: "8px" }}>
+                <label style={{ fontSize: "10px", color: "var(--text-muted)" }}>Valor Estimado ($)</label>
+                <input
+                  type="number"
+                  placeholder="Costo total estimado"
+                  value={nuevoTatuaje.valor_estimado}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNuevoTatuaje({ ...nuevoTatuaje, valor_estimado: val });
+                    if (!formData.valor || formData.valor === nuevoTatuaje.valor_estimado) {
+                      setFormData((prev) => ({ ...prev, valor: val }));
+                    }
+                  }}
+                  required
+                />
               </div>
             </div>
           )}
         </div>
 
         {/* Datos adicionales de la sesión */}
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
           <div style={{ flex: 1 }}>
-            <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Duración de la Sesión (Horas)</label>
+            <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Duración (Horas)</label>
             <input
               type="number"
               step="0.5"
@@ -380,13 +375,22 @@ export default function SesionModal({
             />
           </div>
           <div style={{ flex: 1 }}>
-            <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Valor a Liquidar de la Sesión ($)</label>
+            <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Valor Sesión ($)</label>
             <input
               type="number"
               placeholder="Monto"
               value={formData.valor}
               onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
               required
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Anticipo / Abono ($)</label>
+            <input
+              type="number"
+              placeholder="0"
+              value={formData.anticipo}
+              onChange={(e) => setFormData({ ...formData, anticipo: e.target.value })}
             />
           </div>
         </div>

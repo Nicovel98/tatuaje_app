@@ -10,6 +10,7 @@ class SesionResponseDto {
       duracion_horas: model.duracion_horas,
       es_retoque: model.es_retoque,
       valor: model.valor,
+      anticipo: Number(model.anticipo || 0),
       fecha_creacion: model.fecha_creacion,
       tatuaje: model.tatuaje ? {
         id_tatuaje: model.tatuaje.id_tatuaje,

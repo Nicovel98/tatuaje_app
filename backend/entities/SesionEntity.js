@@ -16,7 +16,6 @@ const SesionEntity = db.getSequelize().define(
     cliente_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      unique: true, // Relación 1:1 estricta con Cliente
     },
     usuario_id: {
       type: DataTypes.INTEGER,
@@ -38,6 +37,11 @@ const SesionEntity = db.getSequelize().define(
     valor: {
       type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
+    },
+    anticipo: {
+      type: DataTypes.DECIMAL(12, 2),
+      allowNull: false,
+      defaultValue: 0.0,
     },
     eliminado: {
       type: DataTypes.BOOLEAN,

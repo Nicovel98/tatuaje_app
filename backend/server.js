@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const swaggerUi = require("swagger-ui-express");
@@ -15,7 +16,7 @@ app.use(express.json());
 
 // Documentación Swagger / OpenAPI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-console.log("📖 Documentación Swagger UI disponible en http://localhost:5000/api-docs");
+console.log("📖 Documentación Swagger UI disponible en /api-docs");
 
 // Rutas modulares de la API
 app.use("/api", apiRoutes);
@@ -42,7 +43,7 @@ const PUERTO = process.env.PORT || 5000;
 // Probar conexión a la base de datos e iniciar servidor
 db.testConnection().then(() => {
   app.listen(PUERTO, () => {
-    console.log(`🚀 Servidor backend corriendo en http://localhost:${PUERTO}`);
+    console.log(`🚀 Servidor backend corriendo en puerto ${PUERTO}`);
   });
 });
 

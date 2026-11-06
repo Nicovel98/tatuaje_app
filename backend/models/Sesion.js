@@ -8,6 +8,7 @@ class Sesion {
     duracion_horas,
     es_retoque = "N",
     valor,
+    anticipo = 0.0,
     eliminado = false,
     fecha_creacion,
     fecha_actualizacion,
@@ -27,6 +28,7 @@ class Sesion {
     this.duracion_horas = Number(duracion_horas);
     this.es_retoque = es_retoque;
     this.valor = Number(valor);
+    this.anticipo = Number(anticipo || 0);
     this.eliminado = eliminado;
     this.fecha_creacion = fecha_creacion;
     this.fecha_actualizacion = fecha_actualizacion;

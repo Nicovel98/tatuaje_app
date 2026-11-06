@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 import { ZONAS_CUERPO } from "./TatuajeModal";
 
 export default function TatuajeForm({ onTatuajeCreado, usuarioActivo }) {
@@ -10,7 +10,6 @@ export default function TatuajeForm({ onTatuajeCreado, usuarioActivo }) {
     estado: "PENDIENTE",
     horas_estimadas: "2.0",
     valor_estimado: "",
-    anticipo: "0",
   });
   const [error, setError] = useState("");
   const [exito, setExito] = useState("");
@@ -27,11 +26,6 @@ export default function TatuajeForm({ onTatuajeCreado, usuarioActivo }) {
       return;
     }
 
-    if (parseFloat(formData.anticipo || 0) > parseFloat(formData.valor_estimado || 0)) {
-      setError("El anticipo no puede superar el valor estimado del tatuaje.");
-      return;
-    }
-
     try {
       const datosEnviar = {
         diseno: formData.diseno,
@@ -39,11 +33,10 @@ export default function TatuajeForm({ onTatuajeCreado, usuarioActivo }) {
         estado: formData.estado,
         horas_estimadas: parseFloat(formData.horas_estimadas || 1),
         valor_estimado: parseFloat(formData.valor_estimado),
-        anticipo: parseFloat(formData.anticipo || 0),
         usuario_creacion: usuarioActivo?.nombre || "ADMIN",
       };
 
-      await axios.post("http://localhost:5000/api/tatuajes", datosEnviar);
+      await api.post("/tatuajes", datosEnviar);
       setExito("¡Diseño de tatuaje registrado con éxito!");
       setFormData({
         diseno: "",
@@ -52,7 +45,6 @@ export default function TatuajeForm({ onTatuajeCreado, usuarioActivo }) {
         estado: "PENDIENTE",
         horas_estimadas: "2.0",
         valor_estimado: "",
-        anticipo: "0",
       });
       if (onTatuajeCreado) onTatuajeCreado();
     } catch (err) {
@@ -119,14 +111,6 @@ export default function TatuajeForm({ onTatuajeCreado, usuarioActivo }) {
             />
           </div>
         </div>
-
-        <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Anticipo Inicial ($)</label>
-        <input
-          type="number"
-          placeholder="Anticipo (abono)"
-          value={formData.anticipo}
-          onChange={(e) => setFormData({ ...formData, anticipo: e.target.value })}
-        />
 
         <select
           value={formData.estado}

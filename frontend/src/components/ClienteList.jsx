@@ -31,11 +31,6 @@ export default function ClienteList({ clientes, onClienteActualizado, usuarioAct
     setClienteSeleccionado(null);
   };
 
-  // Calcular siguiente ID sugerido
-  const ids = (clientes || []).map((c) => Number(c.id_cliente)).filter((id) => !isNaN(id));
-  const maxId = ids.length > 0 ? Math.max(...ids) : 100;
-  const siguienteIdSugerido = String(maxId + 1);
-
   return (
     <div className="card-table" style={{ width: "100%" }}>
       <div className="view-header">
@@ -52,7 +47,7 @@ export default function ClienteList({ clientes, onClienteActualizado, usuarioAct
 
       <input
         type="text"
-        placeholder="Buscar cliente por nombre, cédula, teléfono o correo..."
+        placeholder="Buscar cliente por nombre, teléfono, correo o identificación..."
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
         style={{
@@ -78,7 +73,7 @@ export default function ClienteList({ clientes, onClienteActualizado, usuarioAct
         <table>
           <thead>
             <tr>
-              <th style={{ width: "120px" }}>ID / Cédula</th>
+              <th style={{ width: "120px" }}>Identificación</th>
               <th>Nombre Completo</th>
               <th>Teléfono</th>
               <th>Correo Electrónico</th>
@@ -100,9 +95,9 @@ export default function ClienteList({ clientes, onClienteActualizado, usuarioAct
                   <button
                     className="btn-edit-sm"
                     onClick={() => abrirModalEditar(c)}
-                    title="Editar información del cliente"
+                    title="Editar información"
                   >
-                    <span>&#9998;</span> Editar
+                    <span>✎</span> Editar
                   </button>
                 </td>
               </tr>

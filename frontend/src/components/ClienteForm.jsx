@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 
 export default function ClienteForm({ onClienteCreado }) {
   const [formData, setFormData] = useState({
@@ -19,7 +19,7 @@ export default function ClienteForm({ onClienteCreado }) {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/clientes", formData);
+      await api.post("/clientes", formData);
       setExito("¡Cliente registrado con éxito!");
       setError("");
       setFormData({ nombre: "", telefono: "", correo: "" });

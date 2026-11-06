@@ -34,6 +34,30 @@ class FacturaRepository extends BaseRepository {
     });
   }
 
+  async findByIdWithDetails(id_factura) {
+    const item = await this.entity.findOne({
+      where: { id_factura, eliminado: false },
+      include: [
+        {
+          model: SesionEntity,
+          as: "sesion",
+          include: [
+            { model: TatuajeEntity, as: "tatuaje" },
+            { model: ClienteEntity, as: "cliente" },
+            { model: UsuarioEntity, as: "tatuador", attributes: ["id_usuario", "nombre", "correo"] },
+          ],
+        },
+      ],
+    });
+
+    if (!item) return null;
+    const json = item.toJSON();
+    return new Factura({
+      ...json,
+      sesion: json.sesion,
+    });
+  }
+
   async findByRangoFechas(fechaInicio, fechaFin) {
     const items = await this.entity.findAll({
       where: {

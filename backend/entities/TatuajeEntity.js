@@ -30,11 +30,6 @@ const TatuajeEntity = db.getSequelize().define(
       type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
     },
-    anticipo: {
-      type: DataTypes.DECIMAL(12, 2),
-      allowNull: false,
-      defaultValue: 0.0,
-    },
     fecha_finalizacion: {
       type: DataTypes.DATEONLY,
       allowNull: true,

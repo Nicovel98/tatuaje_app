@@ -40,6 +40,7 @@ class ReporteService {
     const facturas = await facturaRepository.findWithDetails();
     return facturas.map((f) => ({
       id_factura: f.id_factura,
+      num_factura: f.id_factura,
       fecha_emision: f.fecha_emision,
       estado: f.estado,
       total: f.total,

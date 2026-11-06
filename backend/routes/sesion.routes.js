@@ -12,7 +12,7 @@ const router = Router();
  *       200:
  *         description: Lista de sesiones
  *   post:
- *     summary: Registrar una nueva sesión de tatuaje (1:1 con cliente, 1:N con tatuaje y tatuador)
+ *     summary: Registrar una nueva sesión de tatuaje
  *     tags: [Sesiones]
  *     requestBody:
  *       required: true
@@ -20,7 +20,7 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [id_sesion, tatuaje_id, cliente_id, usuario_id, fecha, duracion_horas, valor]
+ *             required: [tatuaje_id, cliente_id, usuario_id, fecha, duracion_horas, valor]
  *             properties:
  *               id_sesion:
  *                 type: integer
@@ -48,6 +48,9 @@ const router = Router();
  *               valor:
  *                 type: number
  *                 example: 250000
+ *               anticipo:
+ *                 type: number
+ *                 example: 50000
  *               ultima_sesion:
  *                 type: boolean
  *                 example: false

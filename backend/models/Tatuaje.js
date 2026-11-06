@@ -6,7 +6,6 @@ class Tatuaje {
     estado = "PENDIENTE",
     horas_estimadas = 1.0,
     valor_estimado,
-    anticipo = 0.0,
     fecha_finalizacion = null,
     eliminado = false,
     fecha_creacion,
@@ -20,7 +19,6 @@ class Tatuaje {
     this.estado = estado;
     this.horas_estimadas = Number(horas_estimadas);
     this.valor_estimado = Number(valor_estimado);
-    this.anticipo = Number(anticipo);
     this.fecha_finalizacion = fecha_finalizacion;
     this.eliminado = eliminado;
     this.fecha_creacion = fecha_creacion;

@@ -20,7 +20,7 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [id_factura, sesion_id, fecha_emision, horas_facturadas, valor_unitario, total]
+ *             required: [sesion_id, fecha_emision, horas_facturadas, valor_unitario, total]
  *             properties:
  *               id_factura:
  *                 type: integer
@@ -56,6 +56,8 @@ const router = Router();
  *         description: Factura emitida
  */
 router.get("/facturas", (req, res) => facturaController.listar(req, res));
+router.get("/facturas/:id/detalle", (req, res) => facturaController.obtenerDetalle(req, res));
+router.get("/facturas/:id", (req, res) => facturaController.obtenerDetalle(req, res));
 router.post("/facturas", (req, res) => facturaController.crear(req, res));
 router.put("/facturas/:id/pago", (req, res) => facturaController.registrarPago(req, res));
 router.delete("/facturas/:id", (req, res) => facturaController.eliminar(req, res));

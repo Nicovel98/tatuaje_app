@@ -8,8 +8,8 @@ const FacturaEntity = require("./FacturaEntity");
 TatuajeEntity.hasMany(SesionEntity, { foreignKey: "tatuaje_id", as: "sesiones" });
 SesionEntity.belongsTo(TatuajeEntity, { foreignKey: "tatuaje_id", as: "tatuaje" });
 
-// 2. Cliente (1) <-> (1) Sesion (Relación 1:1 estricta)
-ClienteEntity.hasOne(SesionEntity, { foreignKey: "cliente_id", as: "sesion" });
+// 2. Cliente (1) -> (N) Sesion (Un cliente puede tener múltiples sesiones)
+ClienteEntity.hasMany(SesionEntity, { foreignKey: "cliente_id", as: "sesiones" });
 SesionEntity.belongsTo(ClienteEntity, { foreignKey: "cliente_id", as: "cliente" });
 
 // 3. Usuario (1) -> (N) Sesion (Un tatuador puede atender múltiples sesiones)

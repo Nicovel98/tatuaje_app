@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../services/api";
 import Modal from "./Modal";
 
 export default function UsuarioModal({
@@ -10,6 +10,7 @@ export default function UsuarioModal({
   onGuardado,
 }) {
   const [formData, setFormData] = useState({
+    identificacion: "",
     nombre: "",
     correo: "",
     clave: "",
@@ -22,6 +23,7 @@ export default function UsuarioModal({
   useEffect(() => {
     if (usuarioEditar) {
       setFormData({
+        identificacion: usuarioEditar.identificacion || "",
         nombre: usuarioEditar.nombre || "",
         correo: usuarioEditar.correo || "",
         clave: "", // Vacía para no sobreescribir salvo que escriba una nueva
@@ -30,6 +32,7 @@ export default function UsuarioModal({
       });
     } else {
       setFormData({
+        identificacion: "",
         nombre: "",
         correo: "",
         clave: "",
@@ -58,6 +61,7 @@ export default function UsuarioModal({
     try {
       if (usuarioEditar) {
         const payload = {
+          identificacion: formData.identificacion,
           nombre: formData.nombre,
           correo: formData.correo,
           rol: formData.rol,
@@ -68,10 +72,10 @@ export default function UsuarioModal({
           payload.clave = formData.clave;
         }
 
-        await axios.put(`http://localhost:5000/api/usuarios/${usuarioEditar.id_usuario}`, payload);
+        await api.put(`/usuarios/${usuarioEditar.id_usuario}`, payload);
       } else {
-        // ID autoincremental en base de datos
-        await axios.post("http://localhost:5000/api/usuarios", {
+        await api.post("/usuarios", {
+          identificacion: formData.identificacion,
           nombre: formData.nombre,
           correo: formData.correo,
           clave: formData.clave,
@@ -97,28 +101,24 @@ export default function UsuarioModal({
       subtitle={
         usuarioEditar
           ? `Modificando perfil de Colaborador #${usuarioEditar.id_usuario} (${usuarioEditar.nombre})`
-          : "Ingrese los datos del miembro del staff. El identificador será generado automáticamente por el sistema."
+          : "Ingrese los datos para registrar al colaborador."
       }
       maxWidth="520px"
     >
       {error && <p className="error" style={{ marginBottom: "14px" }}>{error}</p>}
 
       <form onSubmit={handleSubmit}>
-        {usuarioEditar && (
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>ID Colaborador:</span>
-            <span style={{
-              fontSize: "12px",
-              fontWeight: "700",
-              color: "var(--accent-color)",
-              background: "rgba(244, 208, 63, 0.12)",
-              padding: "2px 8px",
-              borderRadius: "4px",
-            }}>
-              #{usuarioEditar.id_usuario} (Autoincremental)
-            </span>
-          </div>
-        )}
+        <div>
+          <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
+            Número de Identificación (C.C. / DNI)
+          </label>
+          <input
+            type="text"
+            placeholder="ej. 1020304050"
+            value={formData.identificacion}
+            onChange={(e) => setFormData({ ...formData, identificacion: e.target.value })}
+          />
+        </div>
 
         <div>
           <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
@@ -148,11 +148,11 @@ export default function UsuarioModal({
 
         <div>
           <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
-            {usuarioEditar ? "Nueva Contraseña (dejar en blanco para mantener la actual)" : "Contraseña de Acceso"}
+            {usuarioEditar ? "Nueva Contraseña (Opcional si no deseas cambiarla)" : "Contraseña de Acceso"}
           </label>
           <input
             type="password"
-            placeholder={usuarioEditar ? "••••••••" : "Contraseña segura"}
+            placeholder={usuarioEditar ? "Dejar en blanco para mantener la actual" : "Ingresa una contraseña segura"}
             value={formData.clave}
             onChange={(e) => setFormData({ ...formData, clave: e.target.value })}
             required={!usuarioEditar}
@@ -162,7 +162,7 @@ export default function UsuarioModal({
         <div style={{ display: "flex", gap: "10px" }}>
           <div style={{ flex: 1 }}>
             <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
-              Rol en el Estudio
+              Rol en el Sistema
             </label>
             <select
               value={formData.rol}
@@ -176,7 +176,7 @@ export default function UsuarioModal({
           {usuarioEditar && (
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
-                Estado
+                Estado de la Cuenta
               </label>
               <select
                 value={formData.estado}
@@ -194,7 +194,7 @@ export default function UsuarioModal({
             Cancelar
           </button>
           <button type="submit" className="btn-primary" disabled={cargando}>
-            {cargando ? "Guardando..." : usuarioEditar ? "Guardar Cambios" : "Dar de Alta"}
+            {cargando ? "Guardando..." : usuarioEditar ? "Guardar Cambios" : "Crear Colaborador"}
           </button>
         </div>
       </form>

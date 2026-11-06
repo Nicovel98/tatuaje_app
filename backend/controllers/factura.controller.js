@@ -64,6 +64,16 @@ class FacturaController {
     }
   }
 
+  async obtenerDetalle(req, res) {
+    try {
+      const { id } = req.params;
+      const detalle = await facturaService.obtenerDetalle(id);
+      return res.json(detalle);
+    } catch (error) {
+      return res.status(404).json({ error: error.message });
+    }
+  }
+
   async eliminar(req, res) {
     try {
       const { id } = req.params;

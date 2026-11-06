@@ -1,12 +1,12 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 import UsuarioModal from "./UsuarioModal";
 
 export default function UsuarioList({ usuarios, onUsuarioActualizado, usuarioActivo }) {
-  const [error, setError] = useState("");
-  const [exito, setExito] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
+  const [error, setError] = useState("");
+  const [exito, setExito] = useState("");
 
   const abrirModalCrear = () => {
     setUsuarioSeleccionado(null);
@@ -23,27 +23,23 @@ export default function UsuarioList({ usuarios, onUsuarioActualizado, usuarioAct
     setUsuarioSeleccionado(null);
   };
 
-  const handleEliminar = async (id_usuario) => {
-    if (!window.confirm("¿Seguro que deseas dar de baja (soft delete) a este colaborador?")) {
+  const handleEliminar = async (id_usuario, nombre) => {
+    if (!window.confirm(`¿Seguro que deseas dar de baja (inactivar) al colaborador ${nombre}?`)) {
       return;
     }
+
     try {
-      await axios.delete(`http://localhost:5000/api/usuarios/${id_usuario}`, {
+      await api.delete(`/usuarios/${id_usuario}`, {
         data: { usuario_modificador: usuarioActivo?.nombre || "ADMIN" },
       });
-      setExito("Usuario dado de baja exitosamente.");
+      setExito(`Colaborador ${nombre} inactivado con éxito.`);
       setError("");
       if (onUsuarioActualizado) onUsuarioActualizado();
     } catch (err) {
-      setError(err.response?.data?.error || "Error al eliminar usuario");
+      setError(err.response?.data?.error || "Error al eliminar el colaborador.");
       setExito("");
     }
   };
-
-  // Calcular siguiente ID sugerido
-  const ids = (usuarios || []).map((u) => Number(u.id_usuario)).filter((id) => !isNaN(id));
-  const maxId = ids.length > 0 ? Math.max(...ids) : 0;
-  const siguienteIdSugerido = String(maxId + 1);
 
   return (
     <div className="card-table" style={{ width: "100%" }}>
@@ -65,7 +61,7 @@ export default function UsuarioList({ usuarios, onUsuarioActualizado, usuarioAct
       <table>
         <thead>
           <tr>
-            <th style={{ width: "100px" }}>ID / Cédula</th>
+            <th style={{ width: "120px" }}>Identificación</th>
             <th>Nombre</th>
             <th>Correo</th>
             <th>Rol</th>
@@ -78,7 +74,11 @@ export default function UsuarioList({ usuarios, onUsuarioActualizado, usuarioAct
           {usuarios && usuarios.length > 0 ? (
             usuarios.map((u) => (
               <tr key={u.id_usuario}>
-                <td><strong style={{ color: "var(--accent-color)" }}>{u.id_usuario}</strong></td>
+                <td>
+                  <strong style={{ color: "var(--accent-color)" }}>
+                    {u.identificacion || `#${u.id_usuario}`}
+                  </strong>
+                </td>
                 <td><strong>{u.nombre}</strong></td>
                 <td>{u.correo}</td>
                 <td>
@@ -99,17 +99,17 @@ export default function UsuarioList({ usuarios, onUsuarioActualizado, usuarioAct
                     <button
                       className="btn-edit-sm"
                       onClick={() => abrirModalEditar(u)}
-                      title="Editar perfil del colaborador"
+                      title="Editar usuario"
                     >
-                      <span>&#9998;</span> Editar
+                      <span>✎</span> Editar
                     </button>
                     {u.id_usuario !== usuarioActivo?.id_usuario && (
                       <button
                         className="btn-danger-sm"
-                        onClick={() => handleEliminar(u.id_usuario)}
-                        title="Dar de baja"
+                        onClick={() => handleEliminar(u.id_usuario, u.nombre)}
+                        title="Inactivar usuario"
                       >
-                        Baja
+                        ✕
                       </button>
                     )}
                   </div>
@@ -118,7 +118,7 @@ export default function UsuarioList({ usuarios, onUsuarioActualizado, usuarioAct
             ))
           ) : (
             <tr>
-              <td colSpan="7" style={{ textAlign: "center", color: "#888", padding: "30px 20px" }}>
+              <td colSpan="7" style={{ textAlign: "center", padding: "20px" }}>
                 No hay colaboradores registrados.
               </td>
             </tr>

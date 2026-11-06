@@ -8,7 +8,6 @@ class TatuajeResponseDto {
       estado: model.estado,
       horas_estimadas: model.horas_estimadas,
       valor_estimado: model.valor_estimado,
-      anticipo: model.anticipo,
       fecha_finalizacion: model.fecha_finalizacion,
       fecha_creacion: model.fecha_creacion,
     };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../services/api";
 import Modal from "./Modal";
 
 export default function ClienteModal({
@@ -47,15 +47,15 @@ export default function ClienteModal({
     try {
       if (clienteEditar) {
         // Modo Edición
-        await axios.put(`http://localhost:5000/api/clientes/${clienteEditar.id_cliente}`, {
+        await api.put(`/clientes/${clienteEditar.id_cliente}`, {
           nombre: formData.nombre,
           telefono: formData.telefono,
           correo: formData.correo,
           usuario_modificador: usuarioActivo?.nombre || "ADMIN",
         });
       } else {
-        // Modo Creación (ID Autoincremental en base de datos)
-        await axios.post("http://localhost:5000/api/clientes", {
+        // Modo Creación
+        await api.post("/clientes", {
           nombre: formData.nombre,
           telefono: formData.telefono,
           correo: formData.correo,
@@ -80,7 +80,7 @@ export default function ClienteModal({
       subtitle={
         clienteEditar
           ? `Modificando registro de Cliente #${clienteEditar.id_cliente}`
-          : "Ingrese los datos del cliente. El identificador será generado automáticamente por el sistema."
+          : "Ingrese los datos de contacto del cliente para su registro."
       }
       maxWidth="500px"
     >
@@ -89,7 +89,7 @@ export default function ClienteModal({
       <form onSubmit={handleSubmit}>
         {clienteEditar && (
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>ID Cliente:</span>
+            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Cliente:</span>
             <span style={{
               fontSize: "12px",
               fontWeight: "700",
@@ -98,7 +98,7 @@ export default function ClienteModal({
               padding: "2px 8px",
               borderRadius: "4px",
             }}>
-              #{clienteEditar.id_cliente} (Autoincremental)
+              #{clienteEditar.id_cliente}
             </span>
           </div>
         )}

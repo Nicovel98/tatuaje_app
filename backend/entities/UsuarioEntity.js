@@ -9,6 +9,10 @@ const UsuarioEntity = db.getSequelize().define(
       primaryKey: true,
       autoIncrement: true,
     },
+    identificacion: {
+      type: DataTypes.STRING(30),
+      allowNull: true,
+    },
     nombre: {
       type: DataTypes.STRING(100),
       allowNull: false,

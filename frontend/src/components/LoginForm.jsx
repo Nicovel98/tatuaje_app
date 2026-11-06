@@ -1,14 +1,14 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 
 export default function LoginForm({ onLoginExitoso }) {
   const [modo, setModo] = useState("login"); // 'login' o 'registro'
   const [correo, setCorreo] = useState("");
   const [clave, setClave] = useState("");
 
-  // Estado para registro de nuevo usuario
+  // Estado para registro de nuevo usuario (ID automático en BD, campo de identificación del usuario)
   const [registroData, setRegistroData] = useState({
-    id_usuario: "",
+    identificacion: "",
     nombre: "",
     correo: "",
     clave: "",
@@ -31,7 +31,7 @@ export default function LoginForm({ onLoginExitoso }) {
 
     try {
       setCargando(true);
-      const respuesta = await axios.post("http://localhost:5000/api/login", {
+      const respuesta = await api.post("/login", {
         correo,
         clave,
       });
@@ -50,7 +50,7 @@ export default function LoginForm({ onLoginExitoso }) {
     setExito("");
 
     if (
-      !registroData.id_usuario ||
+      !registroData.identificacion ||
       !registroData.nombre ||
       !registroData.correo ||
       !registroData.clave
@@ -61,15 +61,18 @@ export default function LoginForm({ onLoginExitoso }) {
 
     try {
       setCargando(true);
-      // 1. Crear el usuario en la BD mediante el endpoint POST /api/usuarios
-      await axios.post("http://localhost:5000/api/usuarios", {
-        ...registroData,
-        id_usuario: parseInt(registroData.id_usuario),
+      // El ID se genera automáticamente en la base de datos
+      await api.post("/usuarios", {
+        identificacion: registroData.identificacion.trim(),
+        nombre: registroData.nombre.trim(),
+        correo: registroData.correo.trim(),
+        clave: registroData.clave,
+        rol: registroData.rol,
         usuario_creacion: "AUTOREGISTRO",
       });
 
-      // 2. Intentar loguear automáticamente con las nuevas credenciales
-      const loginRes = await axios.post("http://localhost:5000/api/login", {
+      // Login automático con las credenciales registradas
+      const loginRes = await api.post("/login", {
         correo: registroData.correo,
         clave: registroData.clave,
       });
@@ -192,11 +195,11 @@ export default function LoginForm({ onLoginExitoso }) {
       ) : (
         <form onSubmit={handleRegistro}>
           <input
-            type="number"
-            placeholder="ID Usuario / Cédula (ej. 102)"
-            value={registroData.id_usuario}
+            type="text"
+            placeholder="Número de Identificación (C.C. / DNI)"
+            value={registroData.identificacion}
             onChange={(e) =>
-              setRegistroData({ ...registroData, id_usuario: e.target.value })
+              setRegistroData({ ...registroData, identificacion: e.target.value })
             }
             required
           />

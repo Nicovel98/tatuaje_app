@@ -14,6 +14,7 @@ class SesionService {
     duracion_horas,
     es_retoque = "N",
     valor,
+    anticipo = 0.0,
     ultima_sesion = false,
     usuario_creacion = "SISTEMA",
   }) {
@@ -25,6 +26,14 @@ class SesionService {
       throw new Error("La duración de la sesión debe ser mayor a cero.");
     }
 
+    if (anticipo !== undefined && Number(anticipo) < 0) {
+      throw new Error("El anticipo no puede ser negativo.");
+    }
+
+    if (anticipo !== undefined && Number(anticipo) > Number(valor)) {
+      throw new Error("El anticipo no puede superar el valor total de la sesión.");
+    }
+
     if (id_sesion) {
       const existeSesion = await sesionRepository.findById(id_sesion);
       if (existeSesion) {
@@ -32,24 +41,19 @@ class SesionService {
       }
     }
 
-    // 2. Validar que el cliente exista y que NO tenga ya una sesión asignada (Relación 1 a 1 estricta)
+    // 1. Validar que el cliente exista (Un cliente puede tener múltiples sesiones)
     const cliente = await clienteRepository.findById(cliente_id);
     if (!cliente) {
       throw new Error("El cliente seleccionado no existe.");
     }
 
-    const sesionClienteExistente = await sesionRepository.findByClienteId(cliente_id);
-    if (sesionClienteExistente) {
-      throw new Error("El cliente ya tiene una sesión registrada. La relación cliente-sesión es de 1 a 1.");
-    }
-
-    // 3. Validar que el tatuaje exista
+    // 2. Validar que el tatuaje exista
     const tatuaje = await tatuajeRepository.findById(tatuaje_id);
     if (!tatuaje) {
       throw new Error("El tatuaje seleccionado no existe.");
     }
 
-    // 4. Validar que el usuario/tatuador exista
+    // 3. Validar que el usuario/tatuador exista
     const usuario = await usuarioRepository.findById(usuario_id);
     if (!usuario) {
       throw new Error("El tatuador asignado no existe.");
@@ -63,6 +67,7 @@ class SesionService {
       duracion_horas: Number(duracion_horas),
       es_retoque,
       valor: Number(valor),
+      anticipo: Number(anticipo || 0),
       eliminado: false,
       usuario_creacion,
     };
@@ -98,10 +103,6 @@ class SesionService {
       if (!cliente) {
         throw new Error("El cliente seleccionado no existe.");
       }
-      const sesionClienteExistente = await sesionRepository.findByClienteId(datos.cliente_id);
-      if (sesionClienteExistente && Number(sesionClienteExistente.id_sesion) !== Number(id_sesion)) {
-        throw new Error("El cliente ya tiene una sesión registrada. La relación cliente-sesión es de 1 a 1.");
-      }
     }
 
     if (datos.tatuaje_id !== undefined) {
@@ -122,6 +123,16 @@ class SesionService {
       throw new Error("La duración de la sesión debe ser mayor a cero.");
     }
 
+    const nuevoValor = datos.valor !== undefined ? Number(datos.valor) : Number(sesion.valor);
+    const nuevoAnticipo = datos.anticipo !== undefined ? Number(datos.anticipo) : Number(sesion.anticipo);
+
+    if (nuevoAnticipo < 0) {
+      throw new Error("El anticipo no puede ser negativo.");
+    }
+    if (nuevoAnticipo > nuevoValor) {
+      throw new Error("El anticipo no puede superar el valor total de la sesión.");
+    }
+
     const payload = {
       usuario_actualizacion: usuarioModificador,
     };
@@ -131,7 +142,8 @@ class SesionService {
     if (datos.fecha !== undefined) payload.fecha = datos.fecha;
     if (datos.duracion_horas !== undefined) payload.duracion_horas = Number(datos.duracion_horas);
     if (datos.es_retoque !== undefined) payload.es_retoque = datos.es_retoque;
-    if (datos.valor !== undefined) payload.valor = Number(datos.valor);
+    if (datos.valor !== undefined) payload.valor = nuevoValor;
+    if (datos.anticipo !== undefined) payload.anticipo = nuevoAnticipo;
 
     const actualizada = await sesionRepository.update(id_sesion, payload);
 

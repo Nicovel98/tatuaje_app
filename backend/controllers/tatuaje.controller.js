@@ -4,7 +4,7 @@ const TatuajeResponseDto = require("../dtos/tatuaje/tatuaje-response.dto");
 class TatuajeController {
   async crear(req, res) {
     try {
-      const { id_tatuaje, diseno, zona_cuerpo, estado, horas_estimadas, valor_estimado, anticipo, usuario_creacion } = req.body;
+      const { id_tatuaje, diseno, zona_cuerpo, estado, horas_estimadas, valor_estimado, usuario_creacion } = req.body;
       const tatuaje = await tatuajeService.crearTatuaje({
         id_tatuaje,
         diseno,
@@ -12,7 +12,6 @@ class TatuajeController {
         estado,
         horas_estimadas,
         valor_estimado,
-        anticipo,
         usuario_creacion,
       });
 
@@ -56,7 +55,7 @@ class TatuajeController {
       const tatuaje = await tatuajeService.actualizarEstado(id, estado, usuario_modificador);
 
       return res.json({
-        mensaje: "Estado del tatuaje actualizado con éxito",
+        mensaje: `Estado de tatuaje actualizado a ${estado}`,
         tatuaje: TatuajeResponseDto.fromModel(tatuaje),
       });
     } catch (error) {

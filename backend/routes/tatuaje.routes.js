@@ -20,7 +20,7 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [id_tatuaje, diseno, zona_cuerpo, valor_estimado]
+ *             required: [diseno, zona_cuerpo, valor_estimado]
  *             properties:
  *               id_tatuaje:
  *                 type: integer
@@ -41,9 +41,6 @@ const router = Router();
  *               valor_estimado:
  *                 type: number
  *                 example: 450000
- *               anticipo:
- *                 type: number
- *                 example: 50000
  *     responses:
  *       201:
  *         description: Tatuaje registrado

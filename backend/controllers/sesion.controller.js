@@ -13,6 +13,7 @@ class SesionController {
         duracion_horas,
         es_retoque,
         valor,
+        anticipo,
         ultima_sesion,
         usuario_creacion,
       } = req.body;
@@ -26,6 +27,7 @@ class SesionController {
         duracion_horas,
         es_retoque,
         valor,
+        anticipo,
         ultima_sesion,
         usuario_creacion,
       });

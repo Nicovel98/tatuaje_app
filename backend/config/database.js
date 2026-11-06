@@ -1,12 +1,14 @@
+require("dotenv").config();
 const { Sequelize } = require("sequelize");
 
 class Database {
   constructor() {
     if (!Database.instance) {
-      this.sequelize = new Sequelize("tatuaje", "app_user", "12345", {
-        host: "127.0.0.1",
+      const connectionUri = process.env.MYSQL_URL || process.env.DATABASE_URL;
+
+      const commonOptions = {
         dialect: "mysql",
-        logging: false,
+        logging: process.env.NODE_ENV === "development" ? console.log : false,
         pool: {
           max: 10,
           min: 0,
@@ -19,7 +21,25 @@ class Database {
           createdAt: "fecha_creacion",
           updatedAt: "fecha_actualizacion",
         },
-      });
+      };
+
+      if (connectionUri) {
+        this.sequelize = new Sequelize(connectionUri, commonOptions);
+      } else {
+        const dbName = process.env.MYSQLDATABASE || process.env.DB_NAME || "tatuaje";
+        const dbUser = process.env.MYSQLUSER || process.env.DB_USER || "app_user";
+        const dbPassword = process.env.MYSQLPASSWORD !== undefined
+          ? process.env.MYSQLPASSWORD
+          : (process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : "12345");
+        const dbHost = process.env.MYSQLHOST || process.env.DB_HOST || "127.0.0.1";
+        const dbPort = Number(process.env.MYSQLPORT || process.env.DB_PORT || 3306);
+
+        this.sequelize = new Sequelize(dbName, dbUser, dbPassword, {
+          host: dbHost,
+          port: dbPort,
+          ...commonOptions,
+        });
+      }
 
       Database.instance = this;
     }

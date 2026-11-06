@@ -1,30 +1,30 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../services/api";
 
-export default function FacturaForm({ usuarioActivo, onFacturaGenerada }) {
+export default function FacturaForm({ usuarioActivo }) {
   const [sesiones, setSesiones] = useState([]);
   const [facturas, setFacturas] = useState([]);
+  const [sesionSeleccionadaObj, setSesionSeleccionadaObj] = useState(null);
   const [formData, setFormData] = useState({
-    id_factura: "",
     sesion_id: "",
     fecha_emision: new Date().toISOString().split("T")[0],
-    horas_facturadas: "2.0",
+    horas_facturadas: "0",
     valor_unitario: "0",
     subtotal: "0",
     total: "0",
     tipo_pago: "",
-    monto_pagado: "0",
+    monto_pagado: "",
   });
 
+  const [pagoModal, setPagoModal] = useState(null);
   const [error, setError] = useState("");
   const [exito, setExito] = useState("");
-  const [pagoModal, setPagoModal] = useState(null); // Factura seleccionada para pagar
 
   const cargarDatos = async () => {
     try {
       const [resS, resF] = await Promise.all([
-        axios.get("http://localhost:5000/api/sesiones"),
-        axios.get("http://localhost:5000/api/facturas"),
+        api.get("/sesiones"),
+        api.get("/facturas"),
       ]);
       setSesiones(resS.data);
       setFacturas(resF.data);
@@ -40,6 +40,7 @@ export default function FacturaForm({ usuarioActivo, onFacturaGenerada }) {
   const handleSeleccionarSesion = (sId) => {
     const ses = sesiones.find((s) => s.id_sesion === parseInt(sId));
     if (!ses) {
+      setSesionSeleccionadaObj(null);
       setFormData({
         ...formData,
         sesion_id: "",
@@ -47,12 +48,16 @@ export default function FacturaForm({ usuarioActivo, onFacturaGenerada }) {
         valor_unitario: "0",
         subtotal: "0",
         total: "0",
+        monto_pagado: "0",
       });
       return;
     }
 
+    setSesionSeleccionadaObj(ses);
     const horas = parseFloat(ses.duracion_horas || 1);
     const totalVal = parseFloat(ses.valor || 0);
+    const anticipoVal = parseFloat(ses.anticipo || 0);
+    const saldoPendiente = Math.max(0, totalVal - anticipoVal);
     const unitario = horas > 0 ? (totalVal / horas).toFixed(2) : totalVal;
 
     setFormData({
@@ -61,8 +66,8 @@ export default function FacturaForm({ usuarioActivo, onFacturaGenerada }) {
       horas_facturadas: String(horas),
       valor_unitario: String(unitario),
       subtotal: String(totalVal),
-      total: String(totalVal),
-      monto_pagado: String(totalVal),
+      total: String(saldoPendiente),
+      monto_pagado: String(saldoPendiente),
     });
   };
 
@@ -85,25 +90,24 @@ export default function FacturaForm({ usuarioActivo, onFacturaGenerada }) {
         subtotal: parseFloat(formData.subtotal),
         total: parseFloat(formData.total),
         tipo_pago: formData.tipo_pago || null,
-        monto_pagado: formData.tipo_pago ? parseFloat(formData.monto_pagado) : 0,
+        monto_pagado: formData.tipo_pago ? parseFloat(formData.monto_pagado || formData.total) : 0.0,
         usuario_creacion: usuarioActivo?.nombre || "ADMIN",
       };
 
-      await axios.post("http://localhost:5000/api/facturas", payload);
+      await api.post("/facturas", payload);
       setExito("¡Factura emitida exitosamente!");
+      setSesionSeleccionadaObj(null);
       setFormData({
-        id_factura: "",
         sesion_id: "",
         fecha_emision: new Date().toISOString().split("T")[0],
-        horas_facturadas: "2.0",
+        horas_facturadas: "0",
         valor_unitario: "0",
         subtotal: "0",
         total: "0",
         tipo_pago: "",
-        monto_pagado: "0",
+        monto_pagado: "",
       });
       cargarDatos();
-      if (onFacturaGenerada) onFacturaGenerada();
     } catch (err) {
       setError(err.response?.data?.error || "Error al emitir factura.");
     }
@@ -111,29 +115,40 @@ export default function FacturaForm({ usuarioActivo, onFacturaGenerada }) {
 
   const handleRegistrarPago = async (e) => {
     e.preventDefault();
-    if (!pagoModal || !pagoModal.tipo_pago) return;
+    if (!pagoModal) return;
 
     try {
-      await axios.put(`http://localhost:5000/api/facturas/${pagoModal.id_factura}/pago`, {
+      await api.put(`/facturas/${pagoModal.id_factura}/pago`, {
         tipo_pago: pagoModal.tipo_pago,
-        monto_pagado: parseFloat(pagoModal.monto_pagado || pagoModal.total),
+        monto_pagado: parseFloat(pagoModal.monto_pagado),
         usuario_modificador: usuarioActivo?.nombre || "ADMIN",
       });
-      setExito("Pago registrado exitosamente para la factura #" + pagoModal.id_factura);
       setPagoModal(null);
       cargarDatos();
     } catch (err) {
-      alert("Error registrando pago: " + (err.response?.data?.error || err.message));
+      alert(err.response?.data?.error || "Error al registrar pago.");
+    }
+  };
+
+  const handleEliminarFactura = async (id) => {
+    if (!window.confirm(`¿Seguro que deseas anular la factura #${id}?`)) return;
+    try {
+      await api.delete(`/facturas/${id}`, {
+        data: { usuario_modificador: usuarioActivo?.nombre || "ADMIN" },
+      });
+      cargarDatos();
+    } catch (err) {
+      alert(err.response?.data?.error || "Error al anular factura.");
     }
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
       {/* Formulario de Emisión */}
       <div className="card-form">
-        <h3>Emitir Nueva Factura</h3>
+        <h3>Emitir Comprobante / Factura</h3>
         <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "12px" }}>
-          Unificación de detalle y pago en la factura (asociada a Sesión).
+          Emisión de comprobantes y control de pagos asociados a cada sesión.
         </p>
         {error && <p className="error">{error}</p>}
         {exito && <p className="exito" style={{ color: "#2ecc71" }}>{exito}</p>}
@@ -141,7 +156,7 @@ export default function FacturaForm({ usuarioActivo, onFacturaGenerada }) {
         <form onSubmit={handleEmitirFactura}>
           <div style={{ marginBottom: "10px" }}>
             <label style={{ fontSize: "11px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
-              Fecha de Emisión (N° Factura autoincremental)
+              Fecha de Emisión
             </label>
             <input
               type="date"
@@ -158,12 +173,35 @@ export default function FacturaForm({ usuarioActivo, onFacturaGenerada }) {
             required
           >
             <option value="">-- Selecciona una sesión --</option>
-            {sesiones.map((s) => (
-              <option key={s.id_sesion} value={s.id_sesion}>
-                Sesión #{s.id_sesion} | {s.cliente?.nombre || "Cliente"} | {s.tatuaje?.diseno || "Diseño"} | ${Number(s.valor).toLocaleString("es-CO")}
-              </option>
-            ))}
+            {sesiones.map((s) => {
+              const cli = s.cliente?.nombre || s.Cliente?.nombre || "Cliente";
+              const tat = s.tatuaje?.diseno || s.Tatuaje?.diseno || "Diseño";
+              const tieneAnticipo = Number(s.anticipo) > 0;
+              return (
+                <option key={s.id_sesion} value={s.id_sesion}>
+                  Sesión #{s.id_sesion} | {cli} | {tat} | Valor: ${Number(s.valor).toLocaleString("es-CO")}
+                  {tieneAnticipo ? ` (Anticipo: $${Number(s.anticipo).toLocaleString("es-CO")})` : ""}
+                </option>
+              );
+            })}
           </select>
+
+          {sesionSeleccionadaObj && Number(sesionSeleccionadaObj.anticipo) > 0 && (
+            <div style={{
+              background: "rgba(244, 208, 63, 0.08)",
+              border: "1px solid rgba(244, 208, 63, 0.2)",
+              padding: "10px 14px",
+              borderRadius: "6px",
+              marginBottom: "12px",
+              fontSize: "12px",
+              display: "flex",
+              justifyContent: "space-between",
+            }}>
+              <span>Valor Sesión: <strong>${Number(sesionSeleccionadaObj.valor).toLocaleString("es-CO")}</strong></span>
+              <span>Anticipo Abonado: <strong style={{ color: "var(--accent-color)" }}>-${Number(sesionSeleccionadaObj.anticipo).toLocaleString("es-CO")}</strong></span>
+              <span>Saldo a Pagar: <strong style={{ color: "#2ecc71" }}>${Math.max(0, Number(sesionSeleccionadaObj.valor) - Number(sesionSeleccionadaObj.anticipo)).toLocaleString("es-CO")}</strong></span>
+            </div>
+          )}
 
           <div style={{ display: "flex", gap: "10px" }}>
             <div style={{ flex: 1 }}>
@@ -176,12 +214,14 @@ export default function FacturaForm({ usuarioActivo, onFacturaGenerada }) {
                   const h = e.target.value;
                   const u = parseFloat(formData.valor_unitario || 0);
                   const sub = parseFloat(h || 0) * u;
+                  const anticipo = sesionSeleccionadaObj ? parseFloat(sesionSeleccionadaObj.anticipo || 0) : 0;
+                  const saldo = Math.max(0, sub - anticipo);
                   setFormData({
                     ...formData,
                     horas_facturadas: h,
                     subtotal: String(sub),
-                    total: String(sub),
-                    monto_pagado: String(sub),
+                    total: String(saldo),
+                    monto_pagado: String(saldo),
                   });
                 }}
                 required
@@ -196,12 +236,14 @@ export default function FacturaForm({ usuarioActivo, onFacturaGenerada }) {
                   const u = e.target.value;
                   const h = parseFloat(formData.horas_facturadas || 0);
                   const sub = h * parseFloat(u || 0);
+                  const anticipo = sesionSeleccionadaObj ? parseFloat(sesionSeleccionadaObj.anticipo || 0) : 0;
+                  const saldo = Math.max(0, sub - anticipo);
                   setFormData({
                     ...formData,
                     valor_unitario: u,
                     subtotal: String(sub),
-                    total: String(sub),
-                    monto_pagado: String(sub),
+                    total: String(saldo),
+                    monto_pagado: String(saldo),
                   });
                 }}
                 required
@@ -301,13 +343,20 @@ export default function FacturaForm({ usuarioActivo, onFacturaGenerada }) {
                         Pagar
                       </button>
                     )}
+                    <button
+                      className="btn-danger-sm"
+                      style={{ marginLeft: "5px" }}
+                      onClick={() => handleEliminarFactura(f.id_factura)}
+                    >
+                      ✕
+                    </button>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="8" style={{ textAlign: "center", color: "#888" }}>
-                  No hay facturas emitidas todavía.
+                <td colSpan="8" style={{ textAlign: "center", padding: "15px" }}>
+                  No hay facturas emitidas aún.
                 </td>
               </tr>
             )}
@@ -315,41 +364,41 @@ export default function FacturaForm({ usuarioActivo, onFacturaGenerada }) {
         </table>
       </div>
 
-      {/* Modal Registrar Pago Rápido */}
+      {/* Modal para Registro de Pago Posterior */}
       {pagoModal && (
-        <div className="modal-overlay" style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(0,0,0,0.7)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000
-        }}>
-          <div className="card-form" style={{ width: "400px", maxWidth: "90%" }}>
-            <h3>Registrar Pago Factura #{pagoModal.id_factura}</h3>
-            <p>Total a liquidar: <strong>${Number(pagoModal.total).toLocaleString("es-CO")}</strong></p>
+        <div className="modal-backdrop">
+          <div className="modal-content" style={{ maxWidth: "400px" }}>
+            <h4>Registrar Pago - Factura #{pagoModal.id_factura}</h4>
             <form onSubmit={handleRegistrarPago}>
-              <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Método de Pago</label>
-              <select
-                value={pagoModal.tipo_pago}
-                onChange={(e) => setPagoModal({ ...pagoModal, tipo_pago: e.target.value })}
-                required
-              >
-                <option value="EFECTIVO">EFECTIVO</option>
-                <option value="TRANSFERENCIA">TRANSFERENCIA</option>
-                <option value="TARJETA">TARJETA</option>
-              </select>
-              <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Monto Pagado</label>
-              <input
-                type="number"
-                value={pagoModal.monto_pagado}
-                onChange={(e) => setPagoModal({ ...pagoModal, monto_pagado: e.target.value })}
-                required
-              />
-              <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
-                <button type="submit" style={{ flex: 1 }}>Confirmar Pago</button>
-                <button
-                  type="button"
-                  style={{ flex: 1, background: "var(--bg-card)", border: "1px solid var(--border-color)" }}
-                  onClick={() => setPagoModal(null)}
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Método de Pago</label>
+                <select
+                  value={pagoModal.tipo_pago}
+                  onChange={(e) => setPagoModal({ ...pagoModal, tipo_pago: e.target.value })}
+                  required
                 >
+                  <option value="EFECTIVO">Efectivo</option>
+                  <option value="TRANSFERENCIA">Transferencia</option>
+                  <option value="TARJETA">Tarjeta</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontSize: "11px", color: "var(--text-muted)" }}>Monto a Pagar ($)</label>
+                <input
+                  type="number"
+                  value={pagoModal.monto_pagado}
+                  onChange={(e) => setPagoModal({ ...pagoModal, monto_pagado: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="modal-footer">
+                <button type="button" className="btn-secondary" onClick={() => setPagoModal(null)}>
                   Cancelar
+                </button>
+                <button type="submit" className="btn-primary">
+                  Confirmar Pago
                 </button>
               </div>
             </form>

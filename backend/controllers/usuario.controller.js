@@ -4,9 +4,10 @@ const UsuarioResponseDto = require("../dtos/usuario/usuario-response.dto");
 class UsuarioController {
   async crear(req, res) {
     try {
-      const { id_usuario, nombre, correo, clave, rol, usuario_creacion } = req.body;
+      const { id_usuario, identificacion, nombre, correo, clave, rol, usuario_creacion } = req.body;
       const nuevoUsuario = await usuarioService.crearUsuario({
         id_usuario,
+        identificacion,
         nombre,
         correo,
         clave,

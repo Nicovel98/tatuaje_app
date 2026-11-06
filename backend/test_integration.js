@@ -77,7 +77,7 @@ async function runTests() {
   });
   console.log("✅ Cliente creado:", clienteRes);
 
-  // 4. Crear tatuaje
+  // 4. Crear tatuaje (sin anticipo)
   console.log("\n4. Probando creación de diseño de tatuaje...");
   const tatuajeRes = await postJson(`${BASE_URL}/tatuajes`, {
     id_tatuaje: 2001,
@@ -86,13 +86,12 @@ async function runTests() {
     estado: "PENDIENTE",
     horas_estimadas: 4.0,
     valor_estimado: 500000,
-    anticipo: 100000,
     usuario_creacion: "Admin Estudio",
   });
   console.log("✅ Tatuaje creado:", tatuajeRes);
 
-  // 5. Crear sesión (1:1 con cliente)
-  console.log("\n5. Probando creación de sesión...");
+  // 5. Crear primera sesión con anticipo
+  console.log("\n5. Probando creación de primera sesión con anticipo...");
   const sesionRes = await postJson(`${BASE_URL}/sesiones`, {
     id_sesion: 3001,
     tatuaje_id: 2001,
@@ -102,28 +101,28 @@ async function runTests() {
     duracion_horas: 4.0,
     es_retoque: "N",
     valor: 500000,
+    anticipo: 100000,
     usuario_creacion: "Admin Estudio",
   });
-  console.log("✅ Sesión creada:", sesionRes);
+  console.log("✅ Primera sesión creada con anticipo:", sesionRes);
 
-  // 6. Probar restricción 1:1 de Cliente
-  console.log("\n6. Probando restricción 1:1 (segunda sesión para el mismo cliente debe fallar)...");
-  try {
-    await postJson(`${BASE_URL}/sesiones`, {
-      id_sesion: 3002,
-      tatuaje_id: 2001,
-      cliente_id: 1001,
-      usuario_id: 10,
-      fecha: "2026-11-04",
-      duracion_horas: 2.0,
-      valor: 200000,
-    });
-    console.error("❌ ERROR: La restricción 1:1 falló (permitió duplicar cliente en sesión)");
-  } catch (err) {
-    console.log("✅ Restricción 1:1 verificada exitosamente:", err.message);
-  }
+  // 6. Probar que un cliente PUEDE tener más de una sesión (Requerimiento 1)
+  console.log("\n6. Probando que el cliente puede tener una segunda sesión...");
+  const sesion2Res = await postJson(`${BASE_URL}/sesiones`, {
+    id_sesion: 3002,
+    tatuaje_id: 2001,
+    cliente_id: 1001,
+    usuario_id: 10,
+    fecha: "2026-11-10",
+    duracion_horas: 2.0,
+    es_retoque: "S",
+    valor: 200000,
+    anticipo: 50000,
+    usuario_creacion: "Admin Estudio",
+  });
+  console.log("✅ Segunda sesión para el mismo cliente creada exitosamente:", sesion2Res);
 
-  // 7. Emitir factura (1:N con sesión)
+  // 7. Emitir factura vinculada a la sesión
   console.log("\n7. Probando emisión de factura...");
   const facturaRes = await postJson(`${BASE_URL}/facturas`, {
     id_factura: 4001,
@@ -141,7 +140,7 @@ async function runTests() {
 
   // 8. Consultar reportes
   console.log("\n8. Probando reportes...");
-  const comisiones = await getJson(`${BASE_URL}/reportes/comisiones-tatuador?fecha_inicio=2026-11-01&fecha_fin=2026-11-30`);
+  const comisiones = await getJson(`${BASE_URL}/reportes/comisiones?fecha_inicio=2026-11-01&fecha_fin=2026-11-30`);
   console.log("✅ Reporte de comisiones:", comisiones);
 
   const historial = await getJson(`${BASE_URL}/reportes/historial-facturas`);

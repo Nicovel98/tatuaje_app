@@ -42,6 +42,7 @@ CREATE TABLE CLIENTE (
 -- =====================================================================
 CREATE TABLE USUARIO (
     id_usuario INT NOT NULL AUTO_INCREMENT,
+    identificacion VARCHAR(30) NULL,
     nombre VARCHAR(100) NOT NULL,
     correo VARCHAR(120) NOT NULL,
     clave VARCHAR(255) NOT NULL,
@@ -67,7 +68,6 @@ CREATE TABLE TATUAJE (
     estado VARCHAR(15) NOT NULL,
     horas_estimadas DECIMAL(4,2) NOT NULL DEFAULT 1.00,
     valor_estimado DECIMAL(12,2) NOT NULL,
-    anticipo DECIMAL(12,2) NOT NULL DEFAULT 0.00,
     fecha_finalizacion DATE NULL,
     eliminado BOOLEAN NOT NULL DEFAULT FALSE,
     fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -77,13 +77,11 @@ CREATE TABLE TATUAJE (
     CONSTRAINT TATUAJE_PK PRIMARY KEY (id_tatuaje),
     CONSTRAINT TATUAJE_ESTADO_CHK CHECK (estado IN ('PENDIENTE', 'EN_PROGRESO', 'FINALIZADO', 'CANCELADO')),
     CONSTRAINT TATUAJE_VALOR_EST_CHK CHECK (valor_estimado >= 0),
-    CONSTRAINT TATUAJE_ANTICIPO_CHK CHECK (anticipo >= 0),
-    CONSTRAINT TATUAJE_ANTICIPO_VAL_CHK CHECK (anticipo <= valor_estimado),
     CONSTRAINT TATUAJE_HORAS_EST_CHK CHECK (horas_estimadas > 0)
 );
 
 -- =====================================================================
--- 4. TABLA SESION (Relación 1:1 con CLIENTE, 1:N con TATUAJE y 1:N con USUARIO)
+-- 4. TABLA SESION (Relación 1:N con CLIENTE, 1:N con TATUAJE y 1:N con USUARIO)
 -- =====================================================================
 CREATE TABLE SESION (
     id_sesion INT NOT NULL AUTO_INCREMENT,
@@ -94,6 +92,7 @@ CREATE TABLE SESION (
     duracion_horas DECIMAL(4,2) NOT NULL,
     es_retoque VARCHAR(1) NOT NULL DEFAULT 'N',
     valor DECIMAL(12,2) NOT NULL,
+    anticipo DECIMAL(12,2) NOT NULL DEFAULT 0.00,
     eliminado BOOLEAN NOT NULL DEFAULT FALSE,
     fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -103,10 +102,10 @@ CREATE TABLE SESION (
     CONSTRAINT SESION_TATUAJE_FK FOREIGN KEY (tatuaje_id) REFERENCES TATUAJE (id_tatuaje),
     CONSTRAINT SESION_CLIENTE_FK FOREIGN KEY (cliente_id) REFERENCES CLIENTE (id_cliente),
     CONSTRAINT SESION_USUARIO_FK FOREIGN KEY (usuario_id) REFERENCES USUARIO (id_usuario),
-    -- Relación Uno a Uno Estricta con Cliente
-    CONSTRAINT SESION_CLIENTE_UK UNIQUE (cliente_id),
     CONSTRAINT SESION_RETOQUE_CHK CHECK (es_retoque IN ('S', 'N')),
     CONSTRAINT SESION_VALOR_CHK CHECK (valor >= 0),
+    CONSTRAINT SESION_ANTICIPO_CHK CHECK (anticipo >= 0),
+    CONSTRAINT SESION_ANTICIPO_VAL_CHK CHECK (anticipo <= valor),
     CONSTRAINT SESION_DURACION_CHK CHECK (duracion_horas > 0)
 );
 

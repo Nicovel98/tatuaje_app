@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 
 export default function TarifaList({ tarifas, onTarifaActualizada }) {
   const [editando, setEditando] = useState(null);
@@ -12,7 +12,7 @@ export default function TarifaList({ tarifas, onTarifaActualizada }) {
 
   const guardarEdicion = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/tarifas/${id}`, editData);
+      await api.put(`/tarifas/${id}`, editData);
       setEditando(null);
       if (onTarifaActualizada) onTarifaActualizada();
     } catch (err) {
@@ -22,7 +22,7 @@ export default function TarifaList({ tarifas, onTarifaActualizada }) {
 
   return (
     <div className="card-list">
-      <h3>Catalogo de Tarifas</h3>
+      <h3>Catálogo de Tarifas</h3>
       {tarifas.length === 0 ? (
         <p>No hay tarifas configuradas.</p>
       ) : (
@@ -57,7 +57,6 @@ export default function TarifaList({ tarifas, onTarifaActualizada }) {
                         — {t.tatuador_nombre}
                       </span>
                     )}
-                    <small style={{ color: "#888", marginLeft: "10px" }}>(ID: {t.id_tarifa})</small>
                   </div>
                   <button
                     onClick={() => iniciarEdicion(t)}
@@ -73,7 +72,7 @@ export default function TarifaList({ tarifas, onTarifaActualizada }) {
                       flexShrink: 0,
                     }}
                   >
-                    &#9998;
+                    ✎
                   </button>
                 </>
               )}
