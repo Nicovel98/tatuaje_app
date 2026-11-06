@@ -21,6 +21,10 @@ const SesionEntity = db.getSequelize().define(
       type: DataTypes.INTEGER,
       allowNull: false, // 1:N con Usuario
     },
+    tarifa_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     fecha: {
       type: DataTypes.DATEONLY,
       allowNull: false,

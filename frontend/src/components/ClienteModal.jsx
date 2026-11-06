@@ -38,8 +38,12 @@ export default function ClienteModal({
     e.preventDefault();
     setError("");
 
-    if (!formData.nombre || !formData.telefono || !formData.correo) {
-      setError("Todos los campos son obligatorios.");
+    const nombreTrim = (formData.nombre || "").trim();
+    const telTrim = (formData.telefono || "").trim();
+    const correoTrim = (formData.correo || "").trim();
+
+    if (!nombreTrim || !telTrim || !correoTrim) {
+      setError("El nombre, teléfono y correo son obligatorios y no pueden consistir solo en espacios.");
       return;
     }
 
@@ -48,17 +52,17 @@ export default function ClienteModal({
       if (clienteEditar) {
         // Modo Edición
         await api.put(`/clientes/${clienteEditar.id_cliente}`, {
-          nombre: formData.nombre,
-          telefono: formData.telefono,
-          correo: formData.correo,
+          nombre: nombreTrim,
+          telefono: telTrim,
+          correo: correoTrim,
           usuario_modificador: usuarioActivo?.nombre || "ADMIN",
         });
       } else {
         // Modo Creación
         await api.post("/clientes", {
-          nombre: formData.nombre,
-          telefono: formData.telefono,
-          correo: formData.correo,
+          nombre: nombreTrim,
+          telefono: telTrim,
+          correo: correoTrim,
           usuario_creacion: usuarioActivo?.nombre || "ADMIN",
         });
       }
@@ -109,7 +113,7 @@ export default function ClienteModal({
           </label>
           <input
             type="text"
-            placeholder="ej. Juan Pérez"
+            placeholder="ej. Laura Gómez"
             value={formData.nombre}
             onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
             required
@@ -122,7 +126,7 @@ export default function ClienteModal({
           </label>
           <input
             type="text"
-            placeholder="ej. 3001234567"
+            placeholder="ej. 3104567890"
             value={formData.telefono}
             onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
             required
@@ -135,19 +139,19 @@ export default function ClienteModal({
           </label>
           <input
             type="email"
-            placeholder="ej. juan@gmail.com"
+            placeholder="ej. laura@mail.com"
             value={formData.correo}
             onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
             required
           />
         </div>
 
-        <div className="modal-footer">
-          <button type="button" className="btn-secondary" onClick={onClose} disabled={cargando}>
-            Cancelar
+        <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
+          <button type="submit" disabled={cargando} style={{ flex: 1 }}>
+            {cargando ? "Guardando..." : clienteEditar ? "Guardar Cambios" : "Guardar Cliente"}
           </button>
-          <button type="submit" className="btn-primary" disabled={cargando}>
-            {cargando ? "Guardando..." : clienteEditar ? "Guardar Cambios" : "Crear Cliente"}
+          <button type="button" onClick={onClose} className="btn-cancel" style={{ flex: 1 }}>
+            Cancelar
           </button>
         </div>
       </form>

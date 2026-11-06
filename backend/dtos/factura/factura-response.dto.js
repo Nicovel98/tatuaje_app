@@ -4,6 +4,7 @@ class FacturaResponseDto {
     return {
       id_factura: model.id_factura,
       sesion_id: model.sesion_id,
+      tatuaje_id: model.tatuaje_id,
       fecha_emision: model.fecha_emision,
       estado: model.estado,
       horas_facturadas: model.horas_facturadas,
@@ -14,6 +15,7 @@ class FacturaResponseDto {
       fecha_pago: model.fecha_pago,
       monto_pagado: model.monto_pagado,
       fecha_creacion: model.fecha_creacion,
+      resumen: model.resumen || null,
       sesion: model.sesion ? {
         id_sesion: model.sesion.id_sesion,
         fecha: model.sesion.fecha,

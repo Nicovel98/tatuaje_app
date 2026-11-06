@@ -11,7 +11,11 @@ const FacturaEntity = db.getSequelize().define(
     },
     sesion_id: {
       type: DataTypes.INTEGER,
-      allowNull: false, // 1:N con Sesión
+      allowNull: true, // Puede ser null si es una factura consolidada de tatuaje
+    },
+    tatuaje_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
     fecha_emision: {
       type: DataTypes.DATEONLY,

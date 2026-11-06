@@ -4,8 +4,13 @@ const bcrypt = require("bcrypt");
 
 class UsuarioService {
   async crearUsuario({ id_usuario, identificacion, nombre, correo, clave, rol, usuario_creacion = "SISTEMA" }) {
-    if (!nombre || !correo || !clave || !rol) {
+    if (!nombre || !nombre.trim() || !correo || !correo.trim() || !clave || !rol) {
       throw new Error("Nombre, correo, contraseña y rol son obligatorios.");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(correo.trim())) {
+      throw new Error("El formato del correo electrónico es inválido.");
     }
 
     if (id_usuario) {
@@ -15,7 +20,7 @@ class UsuarioService {
       }
     }
 
-    const existeCorreo = await usuarioRepository.existsByCorreo(correo);
+    const existeCorreo = await usuarioRepository.existsByCorreo(correo.trim());
     if (existeCorreo) {
       throw new Error("El correo electrónico ya está en uso.");
     }
@@ -25,8 +30,8 @@ class UsuarioService {
 
     const payload = {
       identificacion: identificacion ? String(identificacion).trim() : null,
-      nombre,
-      correo,
+      nombre: nombre.trim(),
+      correo: correo.trim(),
       clave: claveHash,
       rol,
       estado: "ACTIVO",
@@ -49,10 +54,17 @@ class UsuarioService {
       throw new Error("Usuario no encontrado.");
     }
 
-    if (datos.correo && datos.correo !== usuario.correo) {
-      const existeCorreo = await usuarioRepository.existsByCorreo(datos.correo);
-      if (existeCorreo) {
-        throw new Error("El correo electrónico ya está en uso por otro colaborador.");
+    if (datos.correo) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(datos.correo.trim())) {
+        throw new Error("El formato del correo electrónico es inválido.");
+      }
+
+      if (datos.correo.trim() !== usuario.correo) {
+        const existeCorreo = await usuarioRepository.existsByCorreo(datos.correo.trim());
+        if (existeCorreo) {
+          throw new Error("El correo electrónico ya está en uso por otro colaborador.");
+        }
       }
     }
 
@@ -60,8 +72,8 @@ class UsuarioService {
       usuario_actualizacion: usuarioModificador,
     };
     if (datos.identificacion !== undefined) payload.identificacion = datos.identificacion ? String(datos.identificacion).trim() : null;
-    if (datos.nombre !== undefined) payload.nombre = datos.nombre;
-    if (datos.correo !== undefined) payload.correo = datos.correo;
+    if (datos.nombre !== undefined) payload.nombre = datos.nombre.trim();
+    if (datos.correo !== undefined) payload.correo = datos.correo.trim();
     if (datos.rol !== undefined) payload.rol = datos.rol;
     if (datos.estado !== undefined) payload.estado = datos.estado;
     if (datos.clave && datos.clave.trim() !== "") {

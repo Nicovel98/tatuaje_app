@@ -7,6 +7,7 @@ class FacturaController {
       const {
         id_factura,
         sesion_id,
+        tatuaje_id,
         fecha_emision,
         horas_facturadas,
         valor_unitario,
@@ -20,6 +21,7 @@ class FacturaController {
       const factura = await facturaService.crearFactura({
         id_factura,
         sesion_id,
+        tatuaje_id,
         fecha_emision,
         horas_facturadas,
         valor_unitario,
@@ -32,6 +34,28 @@ class FacturaController {
 
       return res.status(201).json({
         mensaje: "Factura emitida con éxito",
+        factura: FacturaResponseDto.fromModel(factura),
+      });
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
+  async facturarTatuaje(req, res) {
+    try {
+      const { id_tatuaje } = req.params;
+      const { fecha_emision, tipo_pago, monto_pagado, usuario_creacion } = req.body;
+
+      const factura = await facturaService.crearFacturaTatuaje({
+        tatuaje_id: id_tatuaje,
+        fecha_emision,
+        tipo_pago,
+        monto_pagado,
+        usuario_creacion,
+      });
+
+      return res.status(201).json({
+        mensaje: "Factura de tatuaje consolidada emitida con éxito",
         factura: FacturaResponseDto.fromModel(factura),
       });
     } catch (error) {
@@ -64,7 +88,7 @@ class FacturaController {
     }
   }
 
-  async obtenerDetalle(req, res) {
+  async detalle(req, res) {
     try {
       const { id } = req.params;
       const detalle = await facturaService.obtenerDetalle(id);

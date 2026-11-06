@@ -1,10 +1,14 @@
 import { useState } from "react";
 import ClienteModal from "./ClienteModal";
+import ClienteEstadoCuentaModal from "./ClienteEstadoCuentaModal";
 
 export default function ClienteList({ clientes, onClienteActualizado, usuarioActivo }) {
   const [busqueda, setBusqueda] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+
+  const [modalEstadoCuentaAbierto, setModalEstadoCuentaAbierto] = useState(false);
+  const [clienteEstadoCuenta, setClienteEstadoCuenta] = useState(null);
 
   const filtrados = (clientes || []).filter((c) => {
     const texto = busqueda.toLowerCase();
@@ -24,6 +28,11 @@ export default function ClienteList({ clientes, onClienteActualizado, usuarioAct
   const abrirModalEditar = (c) => {
     setClienteSeleccionado(c);
     setModalAbierto(true);
+  };
+
+  const abrirEstadoCuenta = (c) => {
+    setClienteEstadoCuenta(c);
+    setModalEstadoCuentaAbierto(true);
   };
 
   const cerrarModal = () => {
@@ -77,7 +86,7 @@ export default function ClienteList({ clientes, onClienteActualizado, usuarioAct
               <th>Nombre Completo</th>
               <th>Teléfono</th>
               <th>Correo Electrónico</th>
-              <th style={{ textAlign: "center", width: "100px" }}>Acciones</th>
+              <th style={{ textAlign: "center", width: "160px" }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -92,13 +101,23 @@ export default function ClienteList({ clientes, onClienteActualizado, usuarioAct
                 <td>{c.telefono}</td>
                 <td>{c.correo}</td>
                 <td style={{ textAlign: "center" }}>
-                  <button
-                    className="btn-edit-sm"
-                    onClick={() => abrirModalEditar(c)}
-                    title="Editar información"
-                  >
-                    <span>✎</span> Editar
-                  </button>
+                  <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                    <button
+                      className="btn-edit-sm"
+                      onClick={() => abrirEstadoCuenta(c)}
+                      title="Consultar Historial de Pagos y Saldo"
+                      style={{ background: "rgba(52, 152, 219, 0.15)", color: "#3498db", borderColor: "rgba(52, 152, 219, 0.3)" }}
+                    >
+                      <span>💳</span> Pagos
+                    </button>
+                    <button
+                      className="btn-edit-sm"
+                      onClick={() => abrirModalEditar(c)}
+                      title="Editar información"
+                    >
+                      <span>✎</span> Editar
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -113,6 +132,13 @@ export default function ClienteList({ clientes, onClienteActualizado, usuarioAct
         clienteEditar={clienteSeleccionado}
         usuarioActivo={usuarioActivo}
         onGuardado={onClienteActualizado}
+      />
+
+      {/* Modal de Historial de Pagos y Saldo (HU-08) */}
+      <ClienteEstadoCuentaModal
+        isOpen={modalEstadoCuentaAbierto}
+        onClose={() => setModalEstadoCuentaAbierto(false)}
+        cliente={clienteEstadoCuenta}
       />
     </div>
   );
