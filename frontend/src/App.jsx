@@ -10,7 +10,33 @@ import TarifaList from "./components/TarifaList";
 import SesionForm from "./components/SesionForm";
 import FacturaForm from "./components/FacturaForm";
 import ReportesView from "./components/ReportesView";
+import UsuarioForm from "./components/UsuarioForm";
+import UsuarioList from "./components/UsuarioList";
 import "./App.css";
+
+// ── Skeleton de carga ──────────────────────────────────────────────
+function SkeletonCard() {
+  return (
+    <div style={{
+      background: "var(--bg-card)",
+      borderRadius: "10px",
+      padding: "20px",
+      border: "1px solid var(--border-color)",
+    }}>
+      {[80, 60, 90, 50].map((w, i) => (
+        <div key={i} style={{
+          height: "12px",
+          width: `${w}%`,
+          borderRadius: "6px",
+          background: "var(--border-color)",
+          marginBottom: "12px",
+          animation: "pulse 1.5s ease-in-out infinite",
+          animationDelay: `${i * 0.1}s`,
+        }} />
+      ))}
+    </div>
+  );
+}
 
 function App() {
   const [usuario, setUsuario] = useState(null);
@@ -18,6 +44,20 @@ function App() {
   const [clientes, setClientes] = useState([]);
   const [tatuajes, setTatuajes] = useState([]);
   const [tarifas, setTarifas] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
+  const [cargandoDatos, setCargandoDatos] = useState(false);
+  const [tema, setTema] = useState(() => localStorage.getItem("theme") || "dark-soft");
+
+  // ── Inicializar tema desde localStorage ──
+  useEffect(() => {
+    document.documentElement.dataset.theme = tema;
+  }, [tema]);
+
+  const toggleTema = () => {
+    const nuevo = tema === "dark-soft" ? "light" : "dark-soft";
+    setTema(nuevo);
+    localStorage.setItem("theme", nuevo);
+  };
 
   const cargarClientes = async () => {
     try {
@@ -46,30 +86,48 @@ function App() {
     }
   };
 
+  const cargarUsuarios = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/usuarios");
+      setUsuarios(res.data);
+    } catch (err) {
+      console.error("Error cargando colaboradores", err);
+    }
+  };
+
   const handleLogout = () => {
     setUsuario(null);
     setClientes([]);
     setTatuajes([]);
     setTarifas([]);
+    setUsuarios([]);
   };
 
   useEffect(() => {
     if (!usuario) return;
     let estaActivo = true;
     const cargarDatos = async () => {
+      setCargandoDatos(true);
       try {
-        const [resC, resT, resTar] = await Promise.all([
+        const peticiones = [
           axios.get("http://localhost:5000/api/clientes"),
           axios.get("http://localhost:5000/api/tatuajes"),
           axios.get("http://localhost:5000/api/tarifas"),
-        ]);
+        ];
+        if (usuario.rol === "ADMINISTRADOR") {
+          peticiones.push(axios.get("http://localhost:5000/api/usuarios"));
+        }
+        const [resC, resT, resTar, resU] = await Promise.all(peticiones);
         if (estaActivo) {
           setClientes(resC.data);
           setTatuajes(resT.data);
           setTarifas(resTar.data);
+          if (resU) setUsuarios(resU.data);
         }
       } catch (err) {
         console.error("Error al sincronizar datos", err);
+      } finally {
+        if (estaActivo) setCargandoDatos(false);
       }
     };
     cargarDatos();
@@ -80,6 +138,25 @@ function App() {
     return (
       <div className="login-container">
         <LoginForm onLoginExitoso={(u) => setUsuario(u)} />
+      </div>
+    );
+  }
+
+  // ── Spinner / Skeleton de carga global ──
+  if (cargandoDatos) {
+    return (
+      <div className="layout-main">
+        <aside className="sidebar no-print">
+          <div className="sidebar-logo">
+            <h2>ART INK</h2>
+            <p>Tattoo Studio</p>
+          </div>
+        </aside>
+        <main className="content-area">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", maxWidth: "900px" }}>
+            {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
+          </div>
+        </main>
       </div>
     );
   }
@@ -110,33 +187,63 @@ function App() {
 
         <nav className="sidebar-menu">
           <button className={vistaActiva === "clientes" ? "active" : ""} onClick={() => setVistaActiva("clientes")}>
-            Gestion Clientes
+            👥 Gestión Clientes
           </button>
           <button className={vistaActiva === "tatuajes" ? "active" : ""} onClick={() => setVistaActiva("tatuajes")}>
-            Disenos y Tatuajes
+            🎨 Diseños y Tatuajes
           </button>
           <button className={vistaActiva === "tarifas" ? "active" : ""} onClick={() => setVistaActiva("tarifas")}>
-            Catalogo Tarifas
+            💲 Catálogo Tarifas
           </button>
           <button className={vistaActiva === "facturacion" ? "active" : ""} onClick={() => setVistaActiva("facturacion")}>
-            Facturacion
+            🧾 Facturación
           </button>
           {usuario.rol === "ADMINISTRADOR" && (
-            <button className={vistaActiva === "reportes" ? "active" : ""} onClick={() => setVistaActiva("reportes")}>
-              Cierre y Reportes
-            </button>
+            <>
+              <button className={vistaActiva === "usuarios" ? "active" : ""} onClick={() => setVistaActiva("usuarios")}>
+                🧑‍🎨 Gestión Personal
+              </button>
+              <button className={vistaActiva === "reportes" ? "active" : ""} onClick={() => setVistaActiva("reportes")}>
+                📊 Cierre y Reportes
+              </button>
+            </>
           )}
         </nav>
 
+        {/* ── Conmutador de tema ── */}
+        <button
+          onClick={toggleTema}
+          aria-label={tema === "dark-soft" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+          style={{
+            background: "var(--bg-input)",
+            border: "1px solid var(--border-color)",
+            borderRadius: "8px",
+            color: "var(--text-muted)",
+            cursor: "pointer",
+            fontSize: "13px",
+            fontWeight: "600",
+            padding: "10px 16px",
+            width: "100%",
+            textAlign: "left",
+            marginBottom: "10px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            transition: "all 0.2s ease",
+          }}
+        >
+          {tema === "dark-soft" ? "☀️ Tema Claro" : "🌙 Tema Oscuro"}
+        </button>
+
         <button className="btn-sidebar-logout" onClick={handleLogout}>
-          Cerrar Sesion
+          🚪 Cerrar Sesión
         </button>
       </aside>
 
       <main className="content-area">
         {vistaActiva === "clientes" && (
           <div className="fade-in animate-view">
-            <h2>Modulo de Clientes</h2>
+            <h2>Módulo de Clientes</h2>
             <div className="view-grid">
               <ClienteForm onClienteCreado={cargarClientes} />
               <ClienteList clientes={clientes} onClienteActualizado={cargarClientes} />
@@ -146,7 +253,7 @@ function App() {
 
         {vistaActiva === "tatuajes" && (
           <div className="fade-in animate-view">
-            <h2>Modulo de Disenos y Tatuajes</h2>
+            <h2>Módulo de Diseños y Tatuajes</h2>
             <div className="view-grid">
               <div className="columna-view">
                 <TatuajeForm clientes={clientes} tarifas={tarifas} onTatuajeCreado={cargarTatuajes} />
@@ -159,7 +266,7 @@ function App() {
 
         {vistaActiva === "tarifas" && (
           <div className="fade-in animate-view">
-            <h2>Catalogo de Tarifas y Tatuadores</h2>
+            <h2>Catálogo de Tarifas y Tatuadores</h2>
             <div className="view-grid">
               <TarifaForm onTarifaCreada={cargarTarifas} />
               <TarifaList tarifas={tarifas} onTarifaActualizada={cargarTarifas} />
@@ -169,15 +276,25 @@ function App() {
 
         {vistaActiva === "facturacion" && (
           <div className="fade-in animate-view">
-            <h2>Facturacion Electronica</h2>
+            <h2>Facturación Electrónica</h2>
             <div style={{ maxWidth: "700px", margin: "0 auto" }}>
               <FacturaForm tatuajes={tatuajes} usuarioActivo={usuario} onFacturaGenerada={cargarTatuajes} />
             </div>
           </div>
         )}
 
+        {vistaActiva === "usuarios" && usuario.rol === "ADMINISTRADOR" && (
+          <div className="fade-in animate-view">
+            <h2>Gestión de Personal y Tatuadores</h2>
+            <div className="view-grid">
+              <UsuarioForm onUsuarioCreado={cargarUsuarios} />
+              <UsuarioList usuarios={usuarios} />
+            </div>
+          </div>
+        )}
+
         {vistaActiva === "reportes" && usuario.rol === "ADMINISTRADOR" && (
-          <ReportesView />
+          <ReportesView usuarioActivo={usuario} />
         )}
       </main>
     </div>

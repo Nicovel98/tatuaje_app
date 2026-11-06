@@ -33,7 +33,17 @@ export default function SesionForm({
   };
 
   useEffect(() => {
-    cargarSiguienteId();
+    let cancel = false;
+    const fetchSiguiente = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/sesiones/siguiente-id");
+        if (!cancel) setSiguienteId(res.data.siguiente);
+      } catch (err) {
+        console.error("Error cargando siguiente ID", err);
+      }
+    };
+    fetchSiguiente();
+    return () => { cancel = true; };
   }, []);
 
   const recalcularValor = (horas, tarifaId, esRetoque, esGratis = true) => {
@@ -127,13 +137,24 @@ export default function SesionForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (
-      !formData.id_sesion ||
-      !formData.fecha ||
-      !formData.duracion_horas ||
-      !formData.TATUAJE_id_tatuaje
-    ) {
-      setError("Todos los campos son obligatorios.");
+    if (!formData.id_sesion) {
+      setError("El identificador de la sesión es obligatorio.");
+      return;
+    }
+    if (!formData.fecha) {
+      setError("La fecha de la sesión es obligatoria.");
+      return;
+    }
+    if (!formData.duracion_horas || String(formData.duracion_horas).trim() === "") {
+      setError("La duración de la sesión es obligatoria.");
+      return;
+    }
+    if (parseFloat(formData.duracion_horas) <= 0) {
+      setError("La duración de la sesión debe ser mayor a cero horas.");
+      return;
+    }
+    if (!formData.TATUAJE_id_tatuaje) {
+      setError("Debe seleccionar el tatuaje para asociar la sesión.");
       return;
     }
 
@@ -241,7 +262,7 @@ export default function SesionForm({
           </div>
           <input type="date" value={formData.fecha}
             onChange={(e) => handleCambioCampo("fecha", e.target.value)} />
-          <input type="number" step="0.1" placeholder="Duracion en Horas" value={formData.duracion_horas}
+          <input type="number" step="0.1" min="0.1" placeholder="Duracion en Horas" value={formData.duracion_horas}
             onChange={(e) => handleCambioCampo("duracion_horas", e.target.value)} />
 
           {infoRetoque && (

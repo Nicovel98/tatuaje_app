@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-export default function ReportesView() {
+export default function ReportesView({ usuarioActivo }) {
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
   const [comisiones, setComisiones] = useState([]);
@@ -18,6 +18,7 @@ export default function ReportesView() {
       try {
         const res = await axios.get(
           "http://localhost:5000/api/reportes/historial-facturas",
+          { headers: { "x-user-rol": usuarioActivo?.rol || "ADMINISTRADOR" } }
         );
         if (estaActivo) setHistorial(res.data);
       } catch (err) {
@@ -27,7 +28,7 @@ export default function ReportesView() {
 
     inicializarHistorial();
     return () => { estaActivo = false; };
-  }, []);
+  }, [usuarioActivo]);
 
   const handleConsultarReporte = async (e) => {
     e.preventDefault();
@@ -35,9 +36,15 @@ export default function ReportesView() {
       setError("Diligencie el rango completo de fechas.");
       return;
     }
+    if (new Date(fechaInicio) > new Date(fechaFin)) {
+      setError("El rango de fechas es inválido: la fecha inicial no puede ser posterior a la final.");
+      setComisiones([]);
+      return;
+    }
     try {
       const res = await axios.get(
         `http://localhost:5000/api/reportes/comisiones?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`,
+        { headers: { "x-user-rol": usuarioActivo?.rol || "ADMINISTRADOR" } }
       );
       setComisiones(res.data);
       setError("");
@@ -59,13 +66,6 @@ export default function ReportesView() {
       alert(err.response?.data?.error || "Error al cargar factura");
     }
     setCargandoDetalle(false);
-  };
-
-  const generarCUFE = () => {
-    const chars = "0123456789abcdef";
-    let cufe = "";
-    for (let i = 0; i < 40; i++) cufe += chars[Math.floor(Math.random() * 16)];
-    return cufe;
   };
 
   return (

@@ -3,6 +3,9 @@
 -- Con ajustes: PROGRAMADO, tatuador_nombre en TARIFA, TARIFA_id_tarifa en TATUAJE
 -- =====================================================================
 
+CREATE DATABASE IF NOT EXISTS tatuaje;
+USE tatuaje;
+
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS PAGO, DETALLE_FACTURA, FACTURA, SESION, TATUAJE, USUARIO, TARIFA, CLIENTE;
 SET FOREIGN_KEY_CHECKS = 1;

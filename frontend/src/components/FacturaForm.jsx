@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+const generarCUFE = () => {
+  const chars = "0123456789abcdef";
+  let cufe = "";
+  for (let i = 0; i < 40; i++) cufe += chars[Math.floor(Math.random() * 16)];
+  return cufe;
+};
+
 export default function FacturaForm({ tatuajes, usuarioActivo, onFacturaGenerada }) {
   const [tatuajeId, setTatuajeId] = useState("");
   const [numFactura, setNumFactura] = useState("");
@@ -11,13 +18,7 @@ export default function FacturaForm({ tatuajes, usuarioActivo, onFacturaGenerada
   const [facturasRegistradas, setFacturasRegistradas] = useState([]);
   const [soloRetoque, setSoloRetoque] = useState(false);
   const [busquedaFactura, setBusquedaFactura] = useState("");
-
   const [siguienteNum, setSiguienteNum] = useState(null);
-
-  useEffect(() => {
-    cargarFacturas();
-    cargarSiguienteNumero();
-  }, []);
 
   const cargarSiguienteNumero = async () => {
     try {
@@ -36,6 +37,26 @@ export default function FacturaForm({ tatuajes, usuarioActivo, onFacturaGenerada
       console.error("Error cargando facturas", err);
     }
   };
+
+  useEffect(() => {
+    let activo = true;
+    const inicializar = async () => {
+      try {
+        const [resF, resS] = await Promise.all([
+          axios.get("http://localhost:5000/api/facturas"),
+          axios.get("http://localhost:5000/api/facturas/siguiente-numero"),
+        ]);
+        if (activo) {
+          setFacturasRegistradas(resF.data);
+          setSiguienteNum(resS.data.siguiente);
+        }
+      } catch (err) {
+        console.error("Error cargando facturas", err);
+      }
+    };
+    inicializar();
+    return () => { activo = false; };
+  }, []);
 
   const consultarSesiones = async (id, retoque = false) => {
     setTatuajeId(id);
@@ -93,6 +114,7 @@ export default function FacturaForm({ tatuajes, usuarioActivo, onFacturaGenerada
       );
       setFacturaEmitida({
         ...datosFactura,
+        cufe: generarCUFE(),
         diseno: resumen.diseno,
         cliente: tatuajeSeleccionado?.nombre_cliente || "Cliente",
         subtotal: resumen.total_calculado,
@@ -117,13 +139,6 @@ export default function FacturaForm({ tatuajes, usuarioActivo, onFacturaGenerada
           "Error al procesar la factura.",
       );
     }
-  };
-
-  const generarCUFE = (num) => {
-    const chars = "0123456789abcdef";
-    let cufe = "";
-    for (let i = 0; i < 40; i++) cufe += chars[Math.floor(Math.random() * 16)];
-    return cufe;
   };
 
   return (
@@ -405,7 +420,7 @@ export default function FacturaForm({ tatuajes, usuarioActivo, onFacturaGenerada
           </div>
 
           <div className="fe-cufe">
-            <p><strong>CUFE:</strong> {generarCUFE(facturaEmitida.num_factura)}</p>
+            <p><strong>CUFE:</strong> {facturaEmitida.cufe}</p>
             <p style={{ fontSize: "9px", marginTop: "4px" }}>Codigo Unico de Facturacion Electronica - Validacion ante DIAN</p>
           </div>
 

@@ -22,58 +22,142 @@ export default function TarifaList({ tarifas, onTarifaActualizada }) {
 
   return (
     <div className="card-list">
-      <h3>Catalogo de Tarifas</h3>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: "16px" }}>Catálogo de Tarifas y Especialidades</h3>
+          <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--text-muted)" }}>
+            {tarifas.length} tarifas configuradas
+          </p>
+        </div>
+      </div>
+
       {tarifas.length === 0 ? (
-        <p>No hay tarifas configuradas.</p>
+        <p style={{ color: "var(--text-muted)", textAlign: "center", padding: "20px 0" }}>
+          No hay tarifas configuradas en el catálogo.
+        </p>
       ) : (
-        <ul>
+        <ul style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {tarifas.map((t) => (
-            <li key={t.id_tarifa} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <li
+              key={t.id_tarifa}
+              style={{
+                background: "var(--bg-main)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "10px",
+                padding: "14px 16px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               {editando === t.id_tarifa ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
-                  <input type="text" value={editData.tipo_trabajo} style={{ padding: "6px 10px", fontSize: "13px" }}
-                    onChange={(e) => setEditData({ ...editData, tipo_trabajo: e.target.value })} />
-                  <input type="number" value={editData.valor_hora} placeholder="Valor/hora" style={{ padding: "6px 10px", fontSize: "13px" }}
-                    onChange={(e) => setEditData({ ...editData, valor_hora: e.target.value })} />
-                  <input type="text" value={editData.tatuador_nombre} placeholder="Tatuador asignado" style={{ padding: "6px 10px", fontSize: "13px" }}
-                    onChange={(e) => setEditData({ ...editData, tatuador_nombre: e.target.value })} />
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    <button onClick={() => guardarEdicion(t.id_tarifa)}
-                      style={{ padding: "5px 12px", fontSize: "11px", background: "var(--color-success)", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "700" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
+                  <input
+                    type="text"
+                    value={editData.tipo_trabajo}
+                    style={{ padding: "8px 12px", fontSize: "13px" }}
+                    onChange={(e) => setEditData({ ...editData, tipo_trabajo: e.target.value })}
+                  />
+                  <input
+                    type="number"
+                    value={editData.valor_hora}
+                    placeholder="Valor/hora"
+                    style={{ padding: "8px 12px", fontSize: "13px" }}
+                    onChange={(e) => setEditData({ ...editData, valor_hora: e.target.value })}
+                  />
+                  <input
+                    type="text"
+                    value={editData.tatuador_nombre}
+                    placeholder="Tatuador asignado"
+                    style={{ padding: "8px 12px", fontSize: "13px" }}
+                    onChange={(e) => setEditData({ ...editData, tatuador_nombre: e.target.value })}
+                  />
+                  <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                    <button
+                      onClick={() => guardarEdicion(t.id_tarifa)}
+                      style={{
+                        padding: "6px 14px",
+                        fontSize: "12px",
+                        background: "var(--color-success)",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontWeight: "700",
+                      }}
+                    >
                       Guardar
                     </button>
-                    <button onClick={() => setEditando(null)}
-                      style={{ padding: "5px 12px", fontSize: "11px", background: "var(--color-danger)", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "700" }}>
+                    <button
+                      onClick={() => setEditando(null)}
+                      style={{
+                        padding: "6px 14px",
+                        fontSize: "12px",
+                        background: "transparent",
+                        color: "var(--text-muted)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontWeight: "600",
+                      }}
+                    >
                       Cancelar
                     </button>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div>
-                    <strong>{t.tipo_trabajo}</strong>: ${parseFloat(t.valor_hora).toLocaleString("es-CO")}/hora
-                    {t.tatuador_nombre && (
-                      <span style={{ color: "var(--accent-color)", marginLeft: "8px", fontSize: "12px" }}>
-                        — {t.tatuador_nombre}
-                      </span>
-                    )}
-                    <small style={{ color: "#888", marginLeft: "10px" }}>(ID: {t.id_tarifa})</small>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "8px",
+                        background: "rgba(244, 208, 63, 0.12)",
+                        color: "var(--accent-color)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "15px",
+                        fontWeight: "bold",
+                        flexShrink: 0,
+                      }}
+                    >
+                      ⚡
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: "700", fontSize: "14px", color: "var(--text-main)" }}>
+                        {t.tipo_trabajo}
+                      </div>
+                      <div style={{ color: "var(--text-muted)", fontSize: "12px", marginTop: "2px" }}>
+                        <span style={{ color: "var(--color-success)", fontWeight: "600" }}>
+                          ${parseFloat(t.valor_hora).toLocaleString("es-CO")}
+                        </span>{" "}
+                        / hora
+                        {t.tatuador_nombre && (
+                          <span style={{ marginLeft: "8px", color: "var(--text-muted)" }}>
+                            • Artista: <strong style={{ color: "var(--text-main)" }}>{t.tatuador_nombre}</strong>
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
+
                   <button
                     onClick={() => iniciarEdicion(t)}
                     title="Editar tarifa"
                     style={{
-                      background: "transparent",
+                      background: "var(--bg-input)",
                       border: "1px solid var(--border-color)",
                       borderRadius: "6px",
                       padding: "6px 10px",
                       cursor: "pointer",
-                      fontSize: "14px",
+                      fontSize: "13px",
                       color: "var(--text-muted)",
                       flexShrink: 0,
                     }}
                   >
-                    &#9998;
+                    ✎
                   </button>
                 </>
               )}
