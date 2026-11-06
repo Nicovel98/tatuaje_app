@@ -9,6 +9,7 @@ class SesionController {
         tatuaje_id,
         cliente_id,
         usuario_id,
+        tarifa_id,
         fecha,
         duracion_horas,
         es_retoque,
@@ -23,6 +24,7 @@ class SesionController {
         tatuaje_id,
         cliente_id,
         usuario_id,
+        tarifa_id,
         fecha,
         duracion_horas,
         es_retoque,
@@ -62,8 +64,36 @@ class SesionController {
   async actualizar(req, res) {
     try {
       const { id } = req.params;
-      const { usuario_modificador, ...datos } = req.body;
-      const sesion = await sesionService.actualizarSesion(id, datos, usuario_modificador);
+      const {
+        tatuaje_id,
+        cliente_id,
+        usuario_id,
+        tarifa_id,
+        fecha,
+        duracion_horas,
+        es_retoque,
+        valor,
+        anticipo,
+        ultima_sesion,
+        usuario_modificador,
+      } = req.body;
+
+      const sesion = await sesionService.actualizarSesion(
+        id,
+        {
+          tatuaje_id,
+          cliente_id,
+          usuario_id,
+          tarifa_id,
+          fecha,
+          duracion_horas,
+          es_retoque,
+          valor,
+          anticipo,
+          ultima_sesion,
+        },
+        usuario_modificador
+      );
 
       return res.json({
         mensaje: "Sesión actualizada con éxito",

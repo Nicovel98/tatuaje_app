@@ -2,6 +2,7 @@ const sesionRepository = require("../repositories/SesionRepository");
 const clienteRepository = require("../repositories/ClienteRepository");
 const tatuajeRepository = require("../repositories/TatuajeRepository");
 const usuarioRepository = require("../repositories/UsuarioRepository");
+const tarifaRepository = require("../repositories/TarifaRepository");
 const Sesion = require("../models/Sesion");
 
 class SesionService {
@@ -10,6 +11,7 @@ class SesionService {
     tatuaje_id,
     cliente_id,
     usuario_id,
+    tarifa_id,
     fecha,
     duracion_horas,
     es_retoque = "N",
@@ -18,20 +20,21 @@ class SesionService {
     ultima_sesion = false,
     usuario_creacion = "SISTEMA",
   }) {
-    if (!tatuaje_id || !cliente_id || !usuario_id || !fecha || !duracion_horas || valor === undefined) {
+    if (
+      !tatuaje_id ||
+      !cliente_id ||
+      !usuario_id ||
+      !fecha ||
+      duracion_horas === undefined ||
+      duracion_horas === null ||
+      duracion_horas === "" ||
+      valor === undefined
+    ) {
       throw new Error("Todos los campos obligatorios de la sesión deben ser completados.");
     }
 
     if (Number(duracion_horas) <= 0) {
       throw new Error("La duración de la sesión debe ser mayor a cero.");
-    }
-
-    if (anticipo !== undefined && Number(anticipo) < 0) {
-      throw new Error("El anticipo no puede ser negativo.");
-    }
-
-    if (anticipo !== undefined && Number(anticipo) > Number(valor)) {
-      throw new Error("El anticipo no puede superar el valor total de la sesión.");
     }
 
     if (id_sesion) {
@@ -41,7 +44,7 @@ class SesionService {
       }
     }
 
-    // 1. Validar que el cliente exista (Un cliente puede tener múltiples sesiones)
+    // 1. Validar que el cliente exista
     const cliente = await clienteRepository.findById(cliente_id);
     if (!cliente) {
       throw new Error("El cliente seleccionado no existe.");
@@ -59,15 +62,57 @@ class SesionService {
       throw new Error("El tatuador asignado no existe.");
     }
 
+    // 4. Validar tarifa si se envió
+    if (tarifa_id) {
+      const tarifa = await tarifaRepository.findById(tarifa_id);
+      if (!tarifa) {
+        throw new Error("La tarifa seleccionada no existe.");
+      }
+    }
+
+    let finalValor = Number(valor);
+    let finalAnticipo = Number(anticipo || 0);
+
+    // Regla de Negocio HU-07: Retoques
+    // CP-19: Retoque dentro de 30 días -> Gratuito ($0)
+    // CP-20: Retoque fuera de 30 días -> Con cobro (valor > 0)
+    // CP-21: Retoque exactamente día 30 -> Gratuito ($0)
+    if (es_retoque === "S") {
+      if (tatuaje.fecha_finalizacion) {
+        const fRetoque = new Date(fecha);
+        const fFin = new Date(tatuaje.fecha_finalizacion);
+        const diffMs = fRetoque.getTime() - fFin.getTime();
+        const dias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        if (dias <= 30) {
+          finalValor = 0.0;
+          finalAnticipo = 0.0;
+        } else {
+          if (finalValor <= 0) {
+            throw new Error("El retoque se registra fuera del plazo gratuito de 30 días; debe ingresar un valor a cobrar.");
+          }
+        }
+      }
+    }
+
+    if (finalAnticipo < 0) {
+      throw new Error("El anticipo no puede ser negativo.");
+    }
+
+    if (finalAnticipo > finalValor) {
+      throw new Error("El anticipo no puede superar el valor total de la sesión.");
+    }
+
     const payload = {
       tatuaje_id: Number(tatuaje_id),
       cliente_id: Number(cliente_id),
       usuario_id: Number(usuario_id),
+      tarifa_id: tarifa_id ? Number(tarifa_id) : null,
       fecha,
       duracion_horas: Number(duracion_horas),
       es_retoque,
-      valor: Number(valor),
-      anticipo: Number(anticipo || 0),
+      valor: finalValor,
+      anticipo: finalAnticipo,
       eliminado: false,
       usuario_creacion,
     };
@@ -139,6 +184,7 @@ class SesionService {
     if (datos.tatuaje_id !== undefined) payload.tatuaje_id = Number(datos.tatuaje_id);
     if (datos.cliente_id !== undefined) payload.cliente_id = Number(datos.cliente_id);
     if (datos.usuario_id !== undefined) payload.usuario_id = Number(datos.usuario_id);
+    if (datos.tarifa_id !== undefined) payload.tarifa_id = datos.tarifa_id ? Number(datos.tarifa_id) : null;
     if (datos.fecha !== undefined) payload.fecha = datos.fecha;
     if (datos.duracion_horas !== undefined) payload.duracion_horas = Number(datos.duracion_horas);
     if (datos.es_retoque !== undefined) payload.es_retoque = datos.es_retoque;

@@ -7,6 +7,7 @@ export default function SesionList({
   tatuajes = [],
   clientes = [],
   usuarios = [],
+  tarifas = [],
   usuarioActivo,
   onSesionActualizada,
 }) {
@@ -193,6 +194,7 @@ export default function SesionList({
         tatuajes={tatuajes}
         clientes={clientes}
         usuarios={usuarios}
+        tarifas={tarifas}
         usuarioActivo={usuarioActivo}
         onSesionGuardada={onSesionActualizada}
       />

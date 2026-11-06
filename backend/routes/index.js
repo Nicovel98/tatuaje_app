@@ -6,6 +6,7 @@ const tatuajeRoutes = require("./tatuaje.routes");
 const sesionRoutes = require("./sesion.routes");
 const facturaRoutes = require("./factura.routes");
 const reporteRoutes = require("./reporte.routes");
+const tarifaRoutes = require("./tarifa.routes");
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use(tatuajeRoutes);
 router.use(sesionRoutes);
 router.use(facturaRoutes);
 router.use(reporteRoutes);
+router.use(tarifaRoutes);
 
 module.exports = router;

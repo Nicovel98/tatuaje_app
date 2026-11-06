@@ -24,7 +24,7 @@ class UsuarioRepository extends BaseRepository {
 
   async existsByCorreo(correo) {
     const count = await this.entity.count({
-      where: { correo, eliminado: false },
+      where: { correo },
     });
     return count > 0;
   }

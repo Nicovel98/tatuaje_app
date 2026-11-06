@@ -7,6 +7,8 @@ import SesionList from "./components/SesionList";
 import FacturaForm from "./components/FacturaForm";
 import ReportesView from "./components/ReportesView";
 import UsuarioList from "./components/UsuarioList";
+import TarifaForm from "./components/TarifaForm";
+import TarifaList from "./components/TarifaList";
 import "./App.css";
 
 function App() {
@@ -17,6 +19,7 @@ function App() {
   const [tatuajes, setTatuajes] = useState([]);
   const [sesiones, setSesiones] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
+  const [tarifas, setTarifas] = useState([]);
 
   const cargarClientes = async () => {
     try {
@@ -54,12 +57,22 @@ function App() {
     }
   };
 
+  const cargarTarifas = async () => {
+    try {
+      const res = await api.get("/tarifas");
+      setTarifas(res.data);
+    } catch (err) {
+      console.error("Error cargando tarifas", err);
+    }
+  };
+
   const handleLogout = () => {
     setUsuario(null);
     setClientes([]);
     setTatuajes([]);
     setSesiones([]);
     setUsuarios([]);
+    setTarifas([]);
   };
 
   useEffect(() => {
@@ -67,17 +80,19 @@ function App() {
     let estaActivo = true;
     const cargarDatos = async () => {
       try {
-        const [resC, resT, resS, resU] = await Promise.all([
+        const [resC, resT, resS, resU, resTar] = await Promise.all([
           api.get("/clientes"),
           api.get("/tatuajes"),
           api.get("/sesiones"),
           api.get("/usuarios"),
+          api.get("/tarifas").catch(() => ({ data: [] })),
         ]);
         if (estaActivo) {
           setClientes(resC.data);
           setTatuajes(resT.data);
           setSesiones(resS.data);
           setUsuarios(resU.data);
+          setTarifas(resTar.data || []);
         }
       } catch (err) {
         console.error("Error al sincronizar datos", err);
@@ -125,6 +140,9 @@ function App() {
           </button>
           <button className={vistaActiva === "tatuajes" ? "active" : ""} onClick={() => setVistaActiva("tatuajes")}>
             Diseños y Sesiones
+          </button>
+          <button className={vistaActiva === "tarifas" ? "active" : ""} onClick={() => setVistaActiva("tarifas")}>
+            Tarifas de Trabajo
           </button>
           <button className={vistaActiva === "facturacion" ? "active" : ""} onClick={() => setVistaActiva("facturacion")}>
             Facturación
@@ -193,6 +211,7 @@ function App() {
                 tatuajes={tatuajes}
                 clientes={clientes}
                 usuarios={usuarios}
+                tarifas={tarifas}
                 usuarioActivo={usuario}
                 onSesionActualizada={() => {
                   cargarSesiones();
@@ -200,6 +219,17 @@ function App() {
                 }}
               />
             )}
+          </div>
+        )}
+
+        {/* VISTA: TARIFAS DE TRABAJO (HU-04) */}
+        {vistaActiva === "tarifas" && (
+          <div className="fade-in animate-view">
+            <h2>Configuración de Tarifas por Tipo de Trabajo</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "24px" }}>
+              <TarifaForm onTarifaCreada={cargarTarifas} />
+              <TarifaList tarifas={tarifas} onTarifaActualizada={cargarTarifas} />
+            </div>
           </div>
         )}
 

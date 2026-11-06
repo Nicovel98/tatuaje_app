@@ -33,6 +33,11 @@ export default function ReportesView() {
       setError("Diligencie el rango completo de fechas.");
       return;
     }
+    if (new Date(fechaInicio) > new Date(fechaFin)) {
+      setError("Rango de fechas inválido: la fecha inicial debe ser anterior o igual a la final.");
+      setComisiones([]);
+      return;
+    }
     try {
       const res = await api.get(`/reportes/comisiones?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
       setComisiones(res.data);

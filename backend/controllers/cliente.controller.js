@@ -56,6 +56,16 @@ class ClienteController {
       return res.status(400).json({ error: error.message });
     }
   }
+
+  async estadoCuenta(req, res) {
+    try {
+      const { id } = req.params;
+      const estado = await clienteService.obtenerEstadoCuenta(id);
+      return res.json(estado);
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
 }
 
 module.exports = new ClienteController();

@@ -13,6 +13,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data_v2:/var/lib/mysql
+      - ../init_tatuaje_completo.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
 
 volumes:
   mysql_data_v2:

@@ -6,6 +6,10 @@ class ReporteService {
       throw new Error("Debe ingresar ambas fechas para filtrar.");
     }
 
+    if (new Date(fechaInicio) > new Date(fechaFin)) {
+      throw new Error("Rango de fechas inválido: la fecha inicial debe ser anterior o igual a la final.");
+    }
+
     const facturas = await facturaRepository.findByRangoFechas(fechaInicio, fechaFin);
 
     // Agrupar por tatuador
@@ -46,7 +50,7 @@ class ReporteService {
       total: f.total,
       tipo_pago: f.tipo_pago,
       monto_pagado: f.monto_pagado,
-      diseno: f.sesion?.tatuaje?.diseno || "N/A",
+      diseno: f.sesion?.tatuaje?.diseno || f.tatuaje?.diseno || "N/A",
       nombre_cliente: f.sesion?.cliente?.nombre || "N/A",
       nombre_tatuador: f.sesion?.tatuador?.nombre || "N/A",
     }));

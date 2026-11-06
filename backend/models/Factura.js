@@ -1,7 +1,8 @@
 class Factura {
   constructor({
     id_factura,
-    sesion_id,
+    sesion_id = null,
+    tatuaje_id = null,
     fecha_emision,
     estado = "expedida",
     horas_facturadas,
@@ -17,9 +18,11 @@ class Factura {
     usuario_creacion = "SISTEMA",
     usuario_actualizacion = null,
     sesion = null,
+    tatuaje = null,
   }) {
     this.id_factura = id_factura;
     this.sesion_id = sesion_id;
+    this.tatuaje_id = tatuaje_id;
     this.fecha_emision = fecha_emision;
     this.estado = estado;
     this.horas_facturadas = Number(horas_facturadas);
@@ -35,6 +38,7 @@ class Factura {
     this.usuario_creacion = usuario_creacion;
     this.usuario_actualizacion = usuario_actualizacion;
     this.sesion = sesion;
+    this.tatuaje = tatuaje;
   }
 
   registrarPago({ tipo_pago, monto_pagado }, usuarioModificador) {
