@@ -1,3 +1,6 @@
+try {
+  require("dotenv").config();
+} catch (e) {}
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
@@ -8,24 +11,33 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Conexión a la base de datos de phpMyAdmin / MySQL
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "", // Vacío por defecto en XAMPP
-  database: "tatuaje", // Nombre exacto de tu script SQL
-});
+// Conexión dinámica para Railway o entorno local
+const dbConnectionConfig =
+  process.env.MYSQL_URL || process.env.MYSQL_PUBLIC_URL
+    ? (process.env.MYSQL_URL || process.env.MYSQL_PUBLIC_URL)
+    : {
+        host: process.env.MYSQLHOST || process.env.DB_HOST || "localhost",
+        user: process.env.MYSQLUSER || process.env.DB_USER || "root",
+        password:
+          process.env.MYSQLPASSWORD !== undefined
+            ? process.env.MYSQLPASSWORD
+            : (process.env.DB_PASSWORD !== undefined
+                ? process.env.DB_PASSWORD
+                : ""),
+        database:
+          process.env.MYSQLDATABASE || process.env.DB_NAME || "railway",
+        port: Number(process.env.MYSQLPORT || process.env.DB_PORT || 3306),
+      };
+
+const db = mysql.createConnection(dbConnectionConfig);
 
 // Comprobar la conexión
 db.connect((error) => {
   if (error) {
-    console.error(
-      "❌ Error al conectar a la base de datos tatuaje:",
-      error.message,
-    );
+    console.error("❌ Error al conectar a la base de datos:", error.message);
     return;
   }
-  console.log("✅ ¡Conectado exitosamente a la base de datos: tatuaje!");
+  console.log("✅ ¡Conectado exitosamente a la base de datos MySQL!");
 });
 
 // Helper para autogenerar identificadores automáticos y liberar al frontend de IDs manuales
@@ -1026,7 +1038,7 @@ app.get("/api/reportes/historial-facturas", (req, res) => {
 });
 
 // Iniciar servidor
-const PUERTO = 5000;
-app.listen(PUERTO, () => {
-  console.log(`🚀 Servidor backend corriendo en http://localhost:${PUERTO}`);
+const PUERTO = process.env.PORT || 5000;
+app.listen(PUERTO, "0.0.0.0", () => {
+  console.log(`🚀 Servidor backend corriendo en puerto ${PUERTO}`);
 });
