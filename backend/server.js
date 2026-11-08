@@ -40,10 +40,12 @@ app.use((err, req, res, next) => {
 
 const PUERTO = process.env.PORT || 5000;
 
-// Probar conexión a la base de datos e iniciar servidor
-db.testConnection().then(() => {
-  app.listen(PUERTO, () => {
-    console.log(`🚀 Servidor backend corriendo en puerto ${PUERTO}`);
+// Iniciar servidor escuchando en 0.0.0.0 (requerido para Railway/Docker)
+app.listen(PUERTO, "0.0.0.0", () => {
+  console.log(`🚀 Servidor backend corriendo en puerto ${PUERTO}`);
+  // Probar conexión a la base de datos en segundo plano
+  db.testConnection().catch((err) => {
+    console.error("❌ Error en conexión de base de datos:", err);
   });
 });
 
