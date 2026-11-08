@@ -35,13 +35,35 @@ class Database {
         console.log(`🔌 Conectando a MySQL mediante URI: ${uriSegura}`);
         this.sequelize = new Sequelize(connectionUri, commonOptions);
       } else {
-        const dbName = process.env.MYSQLDATABASE || process.env.DB_NAME || "tatuaje";
-        const dbUser = process.env.MYSQLUSER || process.env.DB_USER || "app_user";
-        const dbPassword = process.env.MYSQLPASSWORD !== undefined
-          ? process.env.MYSQLPASSWORD
-          : (process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : "12345");
-        const dbHost = process.env.MYSQLHOST || process.env.DB_HOST || "127.0.0.1";
-        const dbPort = Number(process.env.MYSQLPORT || process.env.DB_PORT || 3306);
+        const dbName =
+          process.env.MYSQL_DATABASE ||
+          process.env.MYSQLDATABASE ||
+          process.env.DB_NAME ||
+          "railway";
+        const dbUser =
+          process.env.MYSQL_USER ||
+          process.env.MYSQLUSER ||
+          process.env.DB_USER ||
+          "root";
+        const dbPassword =
+          process.env.MYSQL_PASSWORD !== undefined
+            ? process.env.MYSQL_PASSWORD
+            : (process.env.MYSQLPASSWORD !== undefined
+                ? process.env.MYSQLPASSWORD
+                : (process.env.DB_PASSWORD !== undefined
+                    ? process.env.DB_PASSWORD
+                    : ""));
+        const dbHost =
+          process.env.MYSQLHOST ||
+          process.env.MYSQL_HOST ||
+          process.env.DB_HOST ||
+          "localhost";
+        const dbPort = Number(
+          process.env.MYSQLPORT ||
+          process.env.MYSQL_PORT ||
+          process.env.DB_PORT ||
+          3306
+        );
 
         console.log(`🔌 Conectando a MySQL en host: ${dbHost}:${dbPort}, base: ${dbName}, usuario: ${dbUser}`);
         this.sequelize = new Sequelize(dbName, dbUser, dbPassword, {
