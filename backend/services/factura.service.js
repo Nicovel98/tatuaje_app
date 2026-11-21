@@ -186,8 +186,18 @@ class FacturaService {
 
     const sesion = factura.sesion;
     const cliente = sesion?.cliente;
-    const tatuaje = sesion?.tatuaje;
+    const tatuaje = sesion?.tatuaje || factura.tatuaje;
     const tatuador = sesion?.tatuador;
+
+    const sesiones = await facturaRepository.findSesionesDeFactura(factura);
+    const detalles = sesiones.map((s) => ({
+      tipo_trabajo: s.tarifa?.tipo_trabajo || "Sesión",
+      es_retoque: s.es_retoque,
+      nombre_tatuador: s.tatuador?.nombre || "N/A",
+      fecha: s.fecha,
+      horas_facturadas: Number(s.duracion_horas),
+      subtotal: Number(s.valor),
+    }));
 
     return {
       id_factura: factura.id_factura,
@@ -200,6 +210,16 @@ class FacturaService {
       tipo_pago: factura.tipo_pago,
       fecha_pago: factura.fecha_pago,
       monto_pagado: factura.monto_pagado,
+      // Campos planos que consume el visor de factura (ReportesView)
+      nombre_cliente: cliente?.nombre || "N/A",
+      id_cliente: cliente?.id_cliente ?? "N/A",
+      correo_cliente: cliente?.correo || "",
+      diseno: tatuaje?.diseno || "N/A",
+      zona_cuerpo: tatuaje?.zona_cuerpo || "",
+      valor_estimado: factura.subtotal,
+      anticipo: Math.max(0, Number(factura.subtotal) - Number(factura.total)),
+      detalles,
+      // Estructura anidada (se conserva por compatibilidad)
       cliente: cliente ? { id_cliente: cliente.id_cliente, nombre: cliente.nombre, correo: cliente.correo, telefono: cliente.telefono } : null,
       tatuaje: tatuaje ? { id_tatuaje: tatuaje.id_tatuaje, diseno: tatuaje.diseno, zona_cuerpo: tatuaje.zona_cuerpo } : null,
       tatuador: tatuador ? { id_usuario: tatuador.id_usuario, nombre: tatuador.nombre } : null,
