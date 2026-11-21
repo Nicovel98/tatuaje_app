@@ -10,21 +10,27 @@ export default function ReportesView() {
   const [facturaDetalle, setFacturaDetalle] = useState(null);
   const [cargandoDetalle, setCargandoDetalle] = useState(false);
   const [busquedaHist, setBusquedaHist] = useState("");
+  const [errorHistorial, setErrorHistorial] = useState("");
+  const [cargandoHistorial, setCargandoHistorial] = useState(false);
+
+  const cargarHistorial = async () => {
+    setCargandoHistorial(true);
+    try {
+      const res = await api.get("/reportes/historial-facturas");
+      setHistorial(Array.isArray(res.data) ? res.data : []);
+      setErrorHistorial("");
+    } catch (err) {
+      console.error("Error al cargar historial:", err);
+      setErrorHistorial(
+        err.response?.data?.error ||
+          `No se pudo cargar el historial (${err.message}). Verifique que el backend esté activo y que VITE_API_URL apunte a él.`,
+      );
+    }
+    setCargandoHistorial(false);
+  };
 
   useEffect(() => {
-    let estaActivo = true;
-
-    const inicializarHistorial = async () => {
-      try {
-        const res = await api.get("/reportes/historial-facturas");
-        if (estaActivo) setHistorial(res.data);
-      } catch (err) {
-        console.error("Error al cargar historial:", err);
-      }
-    };
-
-    inicializarHistorial();
-    return () => { estaActivo = false; };
+    cargarHistorial();
   }, []);
 
   const handleConsultarReporte = async (e) => {
@@ -160,9 +166,20 @@ export default function ReportesView() {
 
       {/* SECCION 2: HISTORIAL DE FACTURAS CON BOTON VER */}
       <div className="card-list no-print">
-        <h3>Historial de Facturas Emitidas</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3>Historial de Facturas Emitidas</h3>
+          <button
+            type="button"
+            onClick={cargarHistorial}
+            disabled={cargandoHistorial}
+            style={{ padding: "6px 14px", fontSize: "12px" }}
+          >
+            {cargandoHistorial ? "Actualizando..." : "Actualizar"}
+          </button>
+        </div>
+        {errorHistorial && <p className="error">{errorHistorial}</p>}
         {historial.length === 0 ? (
-          <p>No se registran movimientos contables.</p>
+          <p>{cargandoHistorial ? "Cargando..." : "No se registran movimientos contables."}</p>
         ) : (
           <>
             <input
